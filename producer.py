@@ -1,5 +1,10 @@
-def kafka_produce(producer)
-        OPENSKY_URL       = (
+def kafka_produce(producer):
+    import requests
+    from udfs import classify_aircraft, detect_anomaly
+    from datetime import datetime, timezone
+    import time
+    
+    OPENSKY_URL = (
         "https://opensky-network.org/api/states/all"
         "?lamin=-55.0&lomin=-74.0&lamax=-21.0&lomax=-53.0"
     )
