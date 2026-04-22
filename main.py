@@ -5,26 +5,55 @@ os.system("clear")
 ######################
 #### INSTALAR JDK ####
 ######################
-os.system("sudo apt-get install -qq openjdk-17-jdk-headless -y > /dev/null")
-os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-17-openjdk-amd64"
+
+command = '''
+echo "📦 [1/6] Instalando Java 17..."
+apt-get install -qq openjdk-17-jdk-headless -y 2>/dev/null || \
+brew install openjdk@17 2>/dev/null || true
+export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+echo "   JAVA_HOME=$JAVA_HOME"
+'''
+os.system(command)
 
 
 ########################
 #### INSTALAR KAFKA ####
 ########################
-KAFKA_DIR = "./kafka"
-if not os.path.exists(KAFKA_DIR):
-    os.system("wget -q https://downloads.apache.org/kafka/3.9.2/kafka_2.13-3.9.2.tgz")
-    os.system("tar -xzf kafka_2.13-3.9.2.tgz")
-    os.system("mv kafka_2.13-3.9.2 kafka")
-    os.system("rm kafka_2.13-3.9.2.tgz") 
+
+command = '''
+KAFKA_DIR="./kafka"
+if [ ! -d "$KAFKA_DIR" ]; then
+    echo "📦 [2/6] Descargando Apache Kafka 3.9.2..."
+    wget -q https://downloads.apache.org/kafka/3.9.2/kafka_2.13-3.9.2.tgz
+    tar -xzf kafka_2.13-3.9.2.tgz
+    mv kafka_2.13-3.9.2 kafka
+    rm kafka_2.13-3.9.2.tgz
+    echo "✅  Kafka descargado"
+else
+    echo "✅  Kafka ya existe"
+fi
+'''
+os.system(command)
 
 #######################
 #### INICIAR KAFKA ####
 #######################
 
-os.system("nohup ./kafka/bin/zookeeper-server-start.sh -daemon ./kafka/config/zookeeper.properties > /tmp/zookeeper.log 2>&1")
+# iniciar Zookeeper
+os.system((
+    "nohup /content/kafka/bin/zookeeper-server-start.sh """
+    "/content/kafka/config/zookeeper.properties > /dev/null 2>&1 &"
+))
+
 time.sleep(5)  # Esperar a que Zookeeper inicie
+
+# iniciar el broker Kafka
+os.system((
+    "nohup /content/kafka/bin/kafka-server-start.sh "
+    "/content/kafka/config/server.properties > /dev/null 2>&1 &"
+))
+
+
 
 #### CREAR TOPIC ####
 os.system((
