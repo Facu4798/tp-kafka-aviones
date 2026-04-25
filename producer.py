@@ -1,9 +1,15 @@
+import sys
+sys.dont_write_bytecode = True
+
+
 def kafka_produce(producer):
     import requests
     from udfs import classify_aircraft, detect_anomaly
     from datetime import datetime, timezone
     import time
     
+    KAFKA_TOPIC = "opensky-argentina"
+    POLL_INTERVAL_SEC = 10
     OPENSKY_URL = (
         "https://opensky-network.org/api/states/all"
         "?lamin=-55.0&lomin=-74.0&lamax=-21.0&lomax=-53.0"
@@ -68,7 +74,6 @@ def kafka_produce(producer):
                     "server_time":      server_time,
                     "ingested_at":      ingested_at,
                 }
-                print(msg)
                 producer.send(KAFKA_TOPIC, msg)
 
             producer.flush()
