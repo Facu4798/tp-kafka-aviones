@@ -1,0 +1,981 @@
+{
+  "aircraft": [
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 1150,
+      "anomaly": null,
+      "baro_altitude_m": 350.5,
+      "callsign": "LVKGV",
+      "heading": 95.1,
+      "icao24": "e0b1d6",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.6871,
+      "longitude": -58.76,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "2000",
+      "velocity_kmh": 167.3,
+      "velocity_ms": 46.5,
+      "vertical_rate_ms": null
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 10450,
+      "anomaly": null,
+      "baro_altitude_m": 3185.2,
+      "callsign": "LPE2381",
+      "heading": 313.3,
+      "icao24": "e80270",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.35,
+      "longitude": -58.4598,
+      "on_ground": false,
+      "origin_country": "Chile",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "0466",
+      "velocity_kmh": 542.4,
+      "velocity_ms": 150.7,
+      "vertical_rate_ms": 4.88
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 12400,
+      "anomaly": null,
+      "baro_altitude_m": 3779.5,
+      "callsign": "LAN714",
+      "heading": 16.8,
+      "icao24": "e80215",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -33.2729,
+      "longitude": -70.9988,
+      "on_ground": false,
+      "origin_country": "Chile",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 684.9,
+      "velocity_ms": 190.2,
+      "vertical_rate_ms": 12.03
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 925,
+      "anomaly": null,
+      "baro_altitude_m": 281.9,
+      "callsign": "LQKHW",
+      "heading": 342.1,
+      "icao24": "e0b217",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.7741,
+      "longitude": -58.5356,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 253,
+      "velocity_ms": 70.3,
+      "vertical_rate_ms": -0.33
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 2525,
+      "anomaly": null,
+      "baro_altitude_m": 769.6,
+      "callsign": "ARG1265",
+      "heading": 123.9,
+      "icao24": "e07585",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.4823,
+      "longitude": -58.5538,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "3253",
+      "velocity_kmh": 319,
+      "velocity_ms": 88.6,
+      "vertical_rate_ms": -5.53
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 28950,
+      "anomaly": null,
+      "baro_altitude_m": 8824,
+      "callsign": "DLH511",
+      "heading": 52.4,
+      "icao24": "3c4b35",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -33.4356,
+      "longitude": -55.913,
+      "on_ground": false,
+      "origin_country": "Germany",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "0461",
+      "velocity_kmh": 1032.8,
+      "velocity_ms": 286.9,
+      "vertical_rate_ms": 5.2
+    },
+    {
+      "aircraft_type": "UNKNOWN",
+      "altitude_ft": 10825,
+      "anomaly": null,
+      "baro_altitude_m": 3299.5,
+      "callsign": "LVGQN",
+      "heading": 311.9,
+      "icao24": "e0744e",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.2488,
+      "longitude": -58.1384,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "6061",
+      "velocity_kmh": 529.8,
+      "velocity_ms": 147.2,
+      "vertical_rate_ms": -11.05
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 1500,
+      "anomaly": null,
+      "baro_altitude_m": 457.2,
+      "callsign": "LVHWX",
+      "heading": 233.2,
+      "icao24": "e085d8",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.6271,
+      "longitude": -58.9688,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "2000",
+      "velocity_kmh": 228.9,
+      "velocity_ms": 63.6,
+      "vertical_rate_ms": -0.33
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 2050,
+      "anomaly": null,
+      "baro_altitude_m": 624.8,
+      "callsign": "LVS114",
+      "heading": 226,
+      "icao24": "e200b9",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.2845,
+      "longitude": -58.7795,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "1723",
+      "velocity_kmh": 144.1,
+      "velocity_ms": 40,
+      "vertical_rate_ms": -0.98
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 3000,
+      "anomaly": null,
+      "baro_altitude_m": 914.4,
+      "callsign": "LVS160",
+      "heading": 322.7,
+      "icao24": "e200f6",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -35.4558,
+      "longitude": -58.0227,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "1724",
+      "velocity_kmh": 156,
+      "velocity_ms": 43.3,
+      "vertical_rate_ms": 0.65
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 2450,
+      "anomaly": null,
+      "baro_altitude_m": 746.8,
+      "callsign": "LVS153",
+      "heading": 334,
+      "icao24": "e200df",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -35.3705,
+      "longitude": -58.6187,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 169,
+      "velocity_ms": 46.9,
+      "vertical_rate_ms": -0.33
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 38000,
+      "anomaly": null,
+      "baro_altitude_m": 11582.4,
+      "callsign": "JAT732",
+      "heading": 280.7,
+      "icao24": "e80624",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.4535,
+      "longitude": -61.4969,
+      "on_ground": false,
+      "origin_country": "Chile",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "0524",
+      "velocity_kmh": 656,
+      "velocity_ms": 182.2,
+      "vertical_rate_ms": null
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": null,
+      "anomaly": null,
+      "baro_altitude_m": null,
+      "callsign": "ARG1765",
+      "heading": 33.8,
+      "icao24": "e0658f",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.5601,
+      "longitude": -58.4092,
+      "on_ground": true,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "2112",
+      "velocity_kmh": null,
+      "velocity_ms": null,
+      "vertical_rate_ms": null
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 21800,
+      "anomaly": null,
+      "baro_altitude_m": 6644.6,
+      "callsign": "LAN010",
+      "heading": 22.1,
+      "icao24": "e80454",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.0813,
+      "longitude": -71.1289,
+      "on_ground": false,
+      "origin_country": "Chile",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 769.3,
+      "velocity_ms": 213.7,
+      "vertical_rate_ms": -9.43
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 37000,
+      "anomaly": null,
+      "baro_altitude_m": 11277.6,
+      "callsign": "1841",
+      "heading": 29.2,
+      "icao24": "e0b2c4",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -39.637,
+      "longitude": -62.7611,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 887.2,
+      "velocity_ms": 246.4,
+      "vertical_rate_ms": 0.33
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 19475,
+      "anomaly": null,
+      "baro_altitude_m": 5936,
+      "callsign": "SKU630",
+      "heading": 88.8,
+      "icao24": "e80334",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -33.826,
+      "longitude": -70.6724,
+      "on_ground": false,
+      "origin_country": "Chile",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 726.1,
+      "velocity_ms": 201.7,
+      "vertical_rate_ms": 13
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 39000,
+      "anomaly": null,
+      "baro_altitude_m": 11887.2,
+      "callsign": "ARG1675",
+      "heading": 57,
+      "icao24": "e0b391",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -37.685,
+      "longitude": -64.4192,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 936,
+      "velocity_ms": 260,
+      "vertical_rate_ms": null
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 35225,
+      "anomaly": null,
+      "baro_altitude_m": 10736.6,
+      "callsign": "GLO7218",
+      "heading": 51.9,
+      "icao24": "e48986",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -33.5985,
+      "longitude": -56.1156,
+      "on_ground": false,
+      "origin_country": "Brazil",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "0561",
+      "velocity_kmh": 953.6,
+      "velocity_ms": 264.9,
+      "vertical_rate_ms": 4.55
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 2350,
+      "anomaly": null,
+      "baro_altitude_m": 716.3,
+      "callsign": "CXRDM",
+      "heading": 350.5,
+      "icao24": "e90f0c",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -33.645,
+      "longitude": -57.9625,
+      "on_ground": false,
+      "origin_country": "Uruguay",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 202.8,
+      "velocity_ms": 56.3,
+      "vertical_rate_ms": 0.65
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 1500,
+      "anomaly": null,
+      "baro_altitude_m": 457.2,
+      "callsign": "LVS079",
+      "heading": 249.9,
+      "icao24": "e2008d",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.702,
+      "longitude": -58.6985,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 140,
+      "velocity_ms": 38.9,
+      "vertical_rate_ms": 0.65
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 2550,
+      "anomaly": null,
+      "baro_altitude_m": 777.2,
+      "callsign": "LVS048",
+      "heading": 299.1,
+      "icao24": "e20063",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -35.3302,
+      "longitude": -58.2427,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "1776",
+      "velocity_kmh": 167.5,
+      "velocity_ms": 46.5,
+      "vertical_rate_ms": 0.33
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 1650,
+      "anomaly": null,
+      "baro_altitude_m": 502.9,
+      "callsign": "N/A",
+      "heading": 135,
+      "icao24": "e20066",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.4721,
+      "longitude": -59.1637,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 165,
+      "velocity_ms": 45.8,
+      "vertical_rate_ms": 0.33
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 1650,
+      "anomaly": null,
+      "baro_altitude_m": 502.9,
+      "callsign": "LVX666",
+      "heading": 21.9,
+      "icao24": "e20077",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.8622,
+      "longitude": -59.213,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 233.5,
+      "velocity_ms": 64.9,
+      "vertical_rate_ms": -1.3
+    },
+    {
+      "aircraft_type": "HELICOPTER",
+      "altitude_ft": 200,
+      "anomaly": "VERY_LOW_ALTITUDE",
+      "baro_altitude_m": 61,
+      "callsign": "LVMLB",
+      "heading": 172.2,
+      "icao24": "e0d302",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.718,
+      "longitude": -58.5031,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 123.4,
+      "velocity_ms": 34.3,
+      "vertical_rate_ms": -1.63
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 30875,
+      "anomaly": null,
+      "baro_altitude_m": 9410.7,
+      "callsign": "JES3064",
+      "heading": 353.2,
+      "icao24": "e0958f",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -33.2899,
+      "longitude": -58.428,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "1767",
+      "velocity_kmh": 740.4,
+      "velocity_ms": 205.7,
+      "vertical_rate_ms": 8.45
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 8500,
+      "anomaly": null,
+      "baro_altitude_m": 2590.8,
+      "callsign": "N/A",
+      "heading": 185.9,
+      "icao24": "e09542",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -33.54,
+      "longitude": -58.6752,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 288.6,
+      "velocity_ms": 80.2,
+      "vertical_rate_ms": null
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 550,
+      "anomaly": null,
+      "baro_altitude_m": 167.6,
+      "callsign": "LVYSA",
+      "heading": 296.6,
+      "icao24": "e00008",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.4713,
+      "longitude": -58.6766,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "2006",
+      "velocity_kmh": 182.2,
+      "velocity_ms": 50.6,
+      "vertical_rate_ms": null
+    },
+    {
+      "aircraft_type": "UNKNOWN",
+      "altitude_ft": null,
+      "anomaly": null,
+      "baro_altitude_m": null,
+      "callsign": "N35LS",
+      "heading": 315,
+      "icao24": "a3e37f",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.5538,
+      "longitude": -58.4235,
+      "on_ground": true,
+      "origin_country": "United States",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 9.3,
+      "velocity_ms": 2.6,
+      "vertical_rate_ms": null
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 11550,
+      "anomaly": null,
+      "baro_altitude_m": 3520.4,
+      "callsign": "GLO7642",
+      "heading": 274.4,
+      "icao24": "e48175",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.0476,
+      "longitude": -58.4473,
+      "on_ground": false,
+      "origin_country": "Brazil",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "3246",
+      "velocity_kmh": 585.1,
+      "velocity_ms": 162.5,
+      "vertical_rate_ms": -3.58
+    },
+    {
+      "aircraft_type": "UNKNOWN",
+      "altitude_ft": 12775,
+      "anomaly": null,
+      "baro_altitude_m": 3893.8,
+      "callsign": "N/A",
+      "heading": 290.7,
+      "icao24": "e030cf",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.8167,
+      "longitude": -57.9835,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "6062",
+      "velocity_kmh": 613.7,
+      "velocity_ms": 170.5,
+      "vertical_rate_ms": -3.9
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 4250,
+      "anomaly": null,
+      "baro_altitude_m": 1295.4,
+      "callsign": "CCDAO",
+      "heading": 106.7,
+      "icao24": "e808bb",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -33.7262,
+      "longitude": -70.7807,
+      "on_ground": false,
+      "origin_country": "Chile",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 174,
+      "velocity_ms": 48.3,
+      "vertical_rate_ms": -0.33
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 33575,
+      "anomaly": null,
+      "baro_altitude_m": 10233.7,
+      "callsign": "TAM8110",
+      "heading": 209,
+      "icao24": "e47fa6",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -33.5338,
+      "longitude": -54.999,
+      "on_ground": false,
+      "origin_country": "Brazil",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 730.3,
+      "velocity_ms": 202.9,
+      "vertical_rate_ms": -12.35
+    },
+    {
+      "aircraft_type": "COMMERCIAL",
+      "altitude_ft": 37000,
+      "anomaly": null,
+      "baro_altitude_m": 11277.6,
+      "callsign": "ARG1647",
+      "heading": 60,
+      "icao24": "e03614",
+      "in_amba": false,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -37.1654,
+      "longitude": -63.9944,
+      "on_ground": false,
+      "origin_country": "Argentina",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "",
+      "velocity_kmh": 945,
+      "velocity_ms": 262.5,
+      "vertical_rate_ms": null
+    },
+    {
+      "aircraft_type": "GENERAL_AVIATION",
+      "altitude_ft": 100,
+      "anomaly": "VERY_LOW_ALTITUDE",
+      "baro_altitude_m": 30.5,
+      "callsign": "LVL2603",
+      "heading": 281.5,
+      "icao24": "34718d",
+      "in_amba": true,
+      "ingested_at": "2026-04-25T20:57:14.231493+00:00",
+      "latitude": -34.8258,
+      "longitude": -58.5157,
+      "on_ground": false,
+      "origin_country": "Spain",
+      "position_source": 0,
+      "server_time": 1777148263,
+      "squawk": "2063",
+      "velocity_kmh": 204.1,
+      "velocity_ms": 56.7,
+      "vertical_rate_ms": null
+    }
+  ],
+  "alert_log": [
+    "20:57:26 | LVL2603 | VERY_LOW_ALTITUDE | 100ft | 204km/h",
+    "20:57:26 | LVMLB | VERY_LOW_ALTITUDE | 200ft | 123km/h"
+  ],
+  "amba_history": [0, 22],
+  "anomaly_aircraft": [
+    {
+      "altitude_ft": 200,
+      "anomaly": "VERY_LOW_ALTITUDE",
+      "callsign": "LVMLB",
+      "velocity_kmh": 123.4
+    },
+    {
+      "altitude_ft": 100,
+      "anomaly": "VERY_LOW_ALTITUDE",
+      "callsign": "LVL2603",
+      "velocity_kmh": 204.1
+    }
+  ],
+  "batch_id": 1,
+  "last_update": "2026-04-25T20:57:26.246882+00:00",
+  "stats": {
+    "airborne": 32,
+    "amba": 22,
+    "avg_alt_ft": 12993.75,
+    "avg_vel_kmh": 457.84375,
+    "total": 34
+  },
+  "top_countries": [
+    {
+      "count": 21,
+      "country": "Argentina"
+    },
+    {
+      "count": 6,
+      "country": "Chile"
+    },
+    {
+      "count": 3,
+      "country": "Brazil"
+    },
+    {
+      "count": 1,
+      "country": "Germany"
+    },
+    {
+      "count": 1,
+      "country": "United States"
+    }
+  ],
+  "total_history": [0, 34],
+  "trails": {
+    "34718d": [
+      {
+        "lat": -34.8258,
+        "lon": -58.5157
+      }
+    ],
+    "3c4b35": [
+      {
+        "lat": -33.4356,
+        "lon": -55.913
+      }
+    ],
+    "a3e37f": [
+      {
+        "lat": -34.5538,
+        "lon": -58.4235
+      }
+    ],
+    "e00008": [
+      {
+        "lat": -34.4713,
+        "lon": -58.6766
+      }
+    ],
+    "e030cf": [
+      {
+        "lat": -34.8167,
+        "lon": -57.9835
+      }
+    ],
+    "e03614": [
+      {
+        "lat": -37.1654,
+        "lon": -63.9944
+      }
+    ],
+    "e0658f": [
+      {
+        "lat": -34.5601,
+        "lon": -58.4092
+      }
+    ],
+    "e0744e": [
+      {
+        "lat": -34.2488,
+        "lon": -58.1384
+      }
+    ],
+    "e07585": [
+      {
+        "lat": -34.4823,
+        "lon": -58.5538
+      }
+    ],
+    "e085d8": [
+      {
+        "lat": -34.6271,
+        "lon": -58.9688
+      }
+    ],
+    "e09542": [
+      {
+        "lat": -33.54,
+        "lon": -58.6752
+      }
+    ],
+    "e0958f": [
+      {
+        "lat": -33.2899,
+        "lon": -58.428
+      }
+    ],
+    "e0b1d6": [
+      {
+        "lat": -34.6871,
+        "lon": -58.76
+      }
+    ],
+    "e0b217": [
+      {
+        "lat": -34.7741,
+        "lon": -58.5356
+      }
+    ],
+    "e0b2c4": [
+      {
+        "lat": -39.637,
+        "lon": -62.7611
+      }
+    ],
+    "e0b391": [
+      {
+        "lat": -37.685,
+        "lon": -64.4192
+      }
+    ],
+    "e0d302": [
+      {
+        "lat": -34.718,
+        "lon": -58.5031
+      }
+    ],
+    "e20063": [
+      {
+        "lat": -35.3302,
+        "lon": -58.2427
+      }
+    ],
+    "e20066": [
+      {
+        "lat": -34.4721,
+        "lon": -59.1637
+      }
+    ],
+    "e20077": [
+      {
+        "lat": -34.8622,
+        "lon": -59.213
+      }
+    ],
+    "e2008d": [
+      {
+        "lat": -34.702,
+        "lon": -58.6985
+      }
+    ],
+    "e200b9": [
+      {
+        "lat": -34.2845,
+        "lon": -58.7795
+      }
+    ],
+    "e200df": [
+      {
+        "lat": -35.3705,
+        "lon": -58.6187
+      }
+    ],
+    "e200f6": [
+      {
+        "lat": -35.4558,
+        "lon": -58.0227
+      }
+    ],
+    "e47fa6": [
+      {
+        "lat": -33.5338,
+        "lon": -54.999
+      }
+    ],
+    "e48175": [
+      {
+        "lat": -34.0476,
+        "lon": -58.4473
+      }
+    ],
+    "e48986": [
+      {
+        "lat": -33.5985,
+        "lon": -56.1156
+      }
+    ],
+    "e80215": [
+      {
+        "lat": -33.2729,
+        "lon": -70.9988
+      }
+    ],
+    "e80270": [
+      {
+        "lat": -34.35,
+        "lon": -58.4598
+      }
+    ],
+    "e80334": [
+      {
+        "lat": -33.826,
+        "lon": -70.6724
+      }
+    ],
+    "e80454": [
+      {
+        "lat": -34.0813,
+        "lon": -71.1289
+      }
+    ],
+    "e80624": [
+      {
+        "lat": -34.4535,
+        "lon": -61.4969
+      }
+    ],
+    "e808bb": [
+      {
+        "lat": -33.7262,
+        "lon": -70.7807
+      }
+    ],
+    "e90f0c": [
+      {
+        "lat": -33.645,
+        "lon": -57.9625
+      }
+    ]
+  },
+  "type_counts": {
+    "COMMERCIAL": 15,
+    "GENERAL_AVIATION": 15,
+    "HELICOPTER": 1,
+    "UNKNOWN": 3
+  }
+}

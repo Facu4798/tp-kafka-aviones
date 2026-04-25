@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Radar Aéreo Argentino — Live Polling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+/* ── RESET & VARIABLES ──────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+    --bg:#080c10; --panel:#0d1117; --panel2:#111822;
+    --border:rgba(0,212,255,0.12); --border2:rgba(255,255,255,0.06);
+    --cyan:#00d4ff; --green:#00ff85; --red:#ff4b78;
+    --gold:#ffd166; --purple:#a855f7;
+    --muted:#3d4d5e; --text:#c8d8e8; --text-dim:#6b7f91;
+    --font-mono:'Space Mono',monospace;
+    --font-ui:'Barlow Condensed',sans-serif;
+    --radius:10px;
+    --transition: 0.4s ease;
+}
+html,body{
+    background:var(--bg); color:var(--text);
+    font-family:var(--font-ui); font-size:14px;
+    line-height:1.4; min-height:100vh; overflow-x:hidden;
+}
+/* Scanlines */
+body::before{
+    content:''; position:fixed; top:0;left:0;right:0;bottom:0;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);
+    pointer-events:none; z-index:9999;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.header{
+    background:linear-gradient(90deg,#0a0f15 0%,#0d1420 100%);
+    border-bottom:1px solid var(--border);
+    padding:12px 22px;
+    display:flex; justify-content:space-between; align-items:center;
+    position:sticky; top:0; z-index:100;
+}
+.header-left{display:flex;align-items:center;gap:14px;}
+.live-dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--green);box-shadow:0 0 10px var(--green);
+    animation:pulse-dot 1.4s ease-in-out infinite;
+    transition:background 0.3s,box-shadow 0.3s;
+}
+.live-dot.disconnected{background:var(--red);box-shadow:0 0 10px var(--red);}
+.live-dot.connecting{background:var(--gold);box-shadow:0 0 10px var(--gold);}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.3);}}
+.header-title{font-family:var(--font-ui);font-size:20px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#fff;}
+.header-sub{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-top:2px;}
+.header-right{display:flex;gap:20px;align-items:center;}
+.sse-status{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:2px;
+    padding:4px 10px;border-radius:999px;border:1px solid;
+    transition:all 0.3s;
+}
+.sse-status.connected{color:var(--green);border-color:var(--green);background:rgba(0,255,133,0.07);}
+.sse-status.disconnected{color:var(--red);border-color:var(--red);background:rgba(255,75,120,0.07);}
+.sse-status.connecting{color:var(--gold);border-color:var(--gold);background:rgba(255,209,102,0.07);}
+.header-time{font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--cyan);letter-spacing:2px;}
+.batch-counter{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-top:2px;}
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+.shell{
+    display:grid;
+    grid-template-columns:340px 1fr 296px;
+    gap:1px; background:var(--border2);
+    min-height:calc(100vh - 53px);
+}
+.col{background:var(--bg);}
+.col-left{grid-row:1/3;}
+.col-center{display:flex;flex-direction:column;gap:1px;background:var(--border2);}
+.col-right{grid-row:1/3;display:flex;flex-direction:column;gap:1px;background:var(--border2);}
+
+/* ── PANELS ─────────────────────────────────────────────── */
+.panel{background:var(--panel);padding:14px;}
+.panel-title{
+    font-family:var(--font-mono);font-size:9px;
+    letter-spacing:3px;text-transform:uppercase;
+    color:var(--cyan);opacity:0.7;
+    margin-bottom:11px;
+    display:flex;align-items:center;gap:8px;
+}
+.panel-title::before{content:'';display:inline-block;width:3px;height:12px;background:var(--cyan);border-radius:2px;}
+
+/* ── KPI ────────────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;}
+.kpi{
+    background:var(--panel2);border:1px solid var(--border2);
+    border-radius:var(--radius);padding:9px 11px;
+}
+.kpi-label{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;}
+.kpi-value{font-size:24px;font-weight:900;line-height:1;font-family:var(--font-ui);transition:all var(--transition);}
+.kpi-sub{font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-top:3px;}
+
+/* ── MAPA ───────────────────────────────────────────────── */
+.map-wrap{background:var(--panel2);border-radius:var(--radius);padding:6px;position:relative;overflow:hidden;}
+.live-map{width:100%;height:580px;border-radius:6px;overflow:hidden;background:#0a0f18;}
+.leaflet-container{background:#0a0f18;font-family:var(--font-ui);}
+.leaflet-control-attribution,.leaflet-control-zoom{font-family:var(--font-mono);}
+.leaflet-control-attribution{background:rgba(8,12,16,0.84)!important;color:var(--text-dim)!important;border-radius:4px!important;border:1px solid rgba(255,255,255,0.08)!important;}
+.leaflet-control-attribution a{color:var(--cyan)!important;}
+.map-legend{position:absolute;left:14px;bottom:14px;z-index:500;background:rgba(8,12,16,0.88);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;font-family:var(--font-mono);font-size:8px;letter-spacing:1px;line-height:1.8;color:var(--text-dim);backdrop-filter:blur(4px);}
+.map-legend-row{display:flex;align-items:center;gap:7px;white-space:nowrap;}
+.map-legend-swatch{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.map-tag{position:absolute;top:9px;left:10px;font-family:var(--font-mono);font-size:7px;letter-spacing:2px;color:rgba(0,212,255,0.35);text-transform:uppercase;}
+.map-tag-r{position:absolute;bottom:9px;right:10px;font-family:var(--font-mono);font-size:7px;color:rgba(255,255,255,0.12);}
+
+/* ── TIPO ROWS ──────────────────────────────────────────── */
+.type-row{display:grid;grid-template-columns:20px 110px 1fr 34px;align-items:center;gap:7px;margin-bottom:6px;}
+.type-label{font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;white-space:nowrap;}
+.type-bar-wrap{height:5px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden;}
+.type-bar{height:100%;border-radius:3px;transition:width 0.6s ease;}
+.type-count{font-family:var(--font-mono);font-size:10px;font-weight:700;text-align:right;}
+
+/* ── PAÍSES ─────────────────────────────────────────────── */
+.country-row{display:grid;grid-template-columns:100px 1fr 24px;align-items:center;gap:7px;margin-bottom:5px;}
+.country-name{font-family:var(--font-mono);font-size:8px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.country-bar-wrap{height:4px;border-radius:2px;background:rgba(255,255,255,0.05);}
+.country-bar{height:100%;border-radius:2px;background:var(--cyan);opacity:0.6;transition:width 0.5s ease;}
+.country-count{font-family:var(--font-mono);font-size:8px;text-align:right;}
+
+/* ── ALERTAS ────────────────────────────────────────────── */
+.alert-item{
+    display:flex;align-items:flex-start;gap:7px;
+    padding:5px 0;border-bottom:1px solid var(--border2);
+    font-family:var(--font-mono);font-size:8px;letter-spacing:0.5px;
+    animation:fade-in 0.3s ease;
+}
+.alert-item:last-child{border-bottom:none;}
+@keyframes fade-in{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+.alert-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:2px;}
+.alert-text{color:var(--text-dim);line-height:1.4;}
+
+/* ── ANOMALÍAS ──────────────────────────────────────────── */
+.anomaly-row{
+    font-family:var(--font-mono);font-size:8px;
+    padding:4px 0;border-bottom:1px solid var(--border2);
+    letter-spacing:0.5px;
+}
+.anomaly-row:last-child{border-bottom:none;}
+
+/* ── AMBA BAR ───────────────────────────────────────────── */
+.amba-bar{margin-top:9px;height:11px;border-radius:6px;background:rgba(255,255,255,0.05);overflow:hidden;position:relative;}
+.amba-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#ff4b78,#ff8c42);transition:width 0.6s ease;}
+.amba-fill2{position:absolute;top:0;left:0;height:100%;width:100%;border-radius:6px;background:linear-gradient(90deg,#00d4ff,#00ff85);opacity:0.3;}
+.amba-labels{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-top:4px;}
+
+/* ── TIMELINE ───────────────────────────────────────────── */
+.tl-legend{display:flex;gap:14px;font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-top:5px;}
+.legend-seg{display:inline-block;width:8px;height:2px;border-radius:1px;margin-right:4px;vertical-align:middle;}
+
+/* ── FOOTER ─────────────────────────────────────────────── */
+.footer{
+    grid-column:1/-1;background:var(--panel);
+    border-top:1px solid var(--border2);
+    padding:8px 22px;font-family:var(--font-mono);font-size:8px;
+    color:var(--muted);letter-spacing:1px;
+    display:flex;justify-content:space-between;
+}
+
+/* ── SPARK BADGE ─────────────────────────────────────────── */
+.spark-badge{
+    font-family:var(--font-mono);font-size:9px;
+    padding:3px 8px;border-radius:4px;
+    background:rgba(232,113,30,0.12);
+    border:1px solid rgba(232,113,30,0.3);
+    color:#e8711e;letter-spacing:1px;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+    <div class="header-left">
+        <div class="live-dot connecting" id="live-dot"></div>
+        <div>
+            <div class="header-title">🛩 RADAR AÉREO ARGENTINO</div>
+            <div class="header-sub">OPENSKY → SPARK STRUCTURED STREAMING → KAFKA → FLASK POLLING → BROWSER</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <span class="spark-badge">⚡ SPARK</span>
+        <div id="sse-status" class="sse-status connecting">CONECTANDO...</div>
+        <div style="text-align:right;">
+            <div class="header-time" id="clock">--:--:-- UTC</div>
+            <div class="batch-counter" id="batch-counter">BATCH #----</div>
+        </div>
+    </div>
+</header>
+
+<div class="shell">
+
+<!-- ═══════════ COLUMNA IZQUIERDA — MAPA ═══════════ -->
+<div class="col col-left panel">
+    <div class="panel-title">MAPA EN VIVO — ESPACIO AÉREO ARGENTINO</div>
+
+    <div class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-label">Aeronaves</div>
+            <div class="kpi-value" style="color:var(--cyan);" id="kpi-total">—</div>
+            <div class="kpi-sub" id="kpi-sub-airborne">— en vuelo</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Zona AMBA</div>
+            <div class="kpi-value" style="color:var(--red);" id="kpi-amba">—%</div>
+            <div class="kpi-sub" id="kpi-sub-amba">— de — total</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Altitud media</div>
+            <div class="kpi-value" style="color:var(--gold);" id="kpi-alt">—</div>
+            <div class="kpi-sub">ft (airborne)</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Velocidad media</div>
+            <div class="kpi-value" style="color:var(--green);" id="kpi-vel">—</div>
+            <div class="kpi-sub">km/h airborne</div>
+        </div>
+    </div>
+
+    <!-- MAPA SVG -->
+    <div class="map-wrap">
+        <span class="map-tag">ADS-B · MLAT · ASTERIX</span>
+        <span class="map-tag-r">BB -55/−21°S · -74/−53°W</span>
+        <div id="live-map" class="live-map"></div>
+        <div class="map-legend">
+            <div class="map-legend-row"><span class="map-legend-swatch" style="background:var(--cyan);"></span>COMERCIAL</div>
+            <div class="map-legend-row"><span class="map-legend-swatch" style="background:var(--gold);"></span>CARGA</div>
+            <div class="map-legend-row"><span class="map-legend-swatch" style="background:var(--red);"></span>MILITAR</div>
+            <div class="map-legend-row"><span class="map-legend-swatch" style="background:var(--purple);"></span>HELICÓPTERO</div>
+            <div class="map-legend-row"><span class="map-legend-swatch" style="background:var(--green);"></span>AV. GENERAL</div>
+        </div>
+    </div>
+
+    <!-- BARRA CONCENTRACIÓN -->
+    <div style="margin-top:10px;">
+        <div style="font-family:var(--font-mono);font-size:8px;color:var(--text-dim);letter-spacing:2px;margin-bottom:5px;">CONCENTRACIÓN GEOGRÁFICA</div>
+        <div class="amba-bar">
+            <div class="amba-fill2"></div>
+            <div class="amba-fill" id="amba-fill" style="width:0%;"></div>
+        </div>
+        <div class="amba-labels">
+            <span style="color:var(--red);" id="amba-lbl-l">■ AMBA 0 (0%)</span>
+            <span style="color:var(--cyan);" id="amba-lbl-r">■ RESTO 0 (100%)</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ COLUMNA CENTRO ═══════════ -->
+<div class="col-center">
+
+    <!-- SCATTER -->
+    <div class="panel" style="flex:none;">
+        <div class="panel-title">ALTITUD vs. VELOCIDAD — CLASIFICACIÓN DE VUELOS</div>
+        <svg viewBox="0 0 360 195" width="100%" id="scatter-svg" style="display:block;">
+            <rect width="360" height="195" fill="var(--panel2)" rx="8"/>
+            <g opacity="0.06" stroke="white">
+                <line x1="25" y1="10" x2="25" y2="170"/><line x1="25" y1="170" x2="345" y2="170"/>
+                <line x1="25" y1="10" x2="345" y2="10"/><line x1="25" y1="63" x2="345" y2="63"/>
+                <line x1="25" y1="116" x2="345" y2="116"/>
+                <line x1="105" y1="10" x2="105" y2="170"/><line x1="185" y1="10" x2="185" y2="170"/>
+                <line x1="265" y1="10" x2="265" y2="170"/>
+            </g>
+            <!-- Labels Y -->
+            <text x="2" y="14" fill="#4a5568" font-size="8" font-family="monospace">45k</text>
+            <text x="2" y="67" fill="#4a5568" font-size="8" font-family="monospace">30k</text>
+            <text x="2" y="120" fill="#4a5568" font-size="8" font-family="monospace">15k</text>
+            <text x="2" y="173" fill="#4a5568" font-size="8" font-family="monospace">0</text>
+            <!-- Labels X -->
+            <text x="20" y="185" fill="#4a5568" font-size="8" font-family="monospace">0</text>
+            <text x="97" y="185" fill="#4a5568" font-size="8" font-family="monospace">250</text>
+            <text x="177" y="185" fill="#4a5568" font-size="8" font-family="monospace">500</text>
+            <text x="257" y="185" fill="#4a5568" font-size="8" font-family="monospace">750</text>
+            <text x="330" y="185" fill="#4a5568" font-size="8" font-family="monospace">1000</text>
+            <!-- Zonas -->
+            <rect x="25" y="90" width="128" height="80" fill="rgba(0,255,133,0.04)" stroke="rgba(0,255,133,0.1)" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
+            <text x="30" y="104" fill="rgba(0,255,133,0.35)" font-size="8" font-family="'Space Mono',monospace">AV. GENERAL</text>
+            <rect x="153" y="10" width="192" height="96" fill="rgba(0,212,255,0.04)" stroke="rgba(0,212,255,0.1)" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
+            <text x="158" y="24" fill="rgba(0,212,255,0.35)" font-size="8" font-family="'Space Mono',monospace">COMERCIAL / CARGA</text>
+            <!-- Dots dinámicos -->
+            <g id="scatter-dots"></g>
+            <!-- Eje labels -->
+            <text x="183" y="193" text-anchor="middle" fill="var(--text-dim)" font-size="8" font-family="'Space Mono',monospace">VELOCIDAD (km/h)</text>
+        </svg>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;font-family:var(--font-mono);font-size:8px;color:var(--text-dim);">
+            <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00d4ff;margin-right:3px;"></span>COMERCIAL</span>
+            <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ffd166;margin-right:3px;"></span>CARGA</span>
+            <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff4b78;margin-right:3px;"></span>MILITAR</span>
+            <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#a855f7;margin-right:3px;"></span>HELICÓPTERO</span>
+            <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00ff85;margin-right:3px;"></span>AV. GENERAL</span>
+        </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="panel" style="flex:none;">
+        <div class="panel-title">EVOLUCIÓN TEMPORAL — TRÁFICO AMBA vs. PAÍS</div>
+        <svg viewBox="0 0 360 85" width="100%" style="display:block;">
+            <rect width="360" height="85" fill="var(--panel2)" rx="8"/>
+            <g opacity="0.04" stroke="white">
+                <line x1="10" y1="10" x2="350" y2="10"/><line x1="10" y1="38" x2="350" y2="38"/>
+                <line x1="10" y1="62" x2="350" y2="62"/><line x1="10" y1="75" x2="350" y2="75"/>
+            </g>
+            <polyline id="tl-total" points="" fill="none" stroke="#00d4ff" stroke-width="2" opacity="0.85"/>
+            <polyline id="tl-amba"  points="" fill="none" stroke="#ff4b78" stroke-width="2" opacity="0.85"/>
+        </svg>
+        <div class="tl-legend">
+            <span><span class="legend-seg" style="background:var(--cyan);"></span>TOTAL PAÍS</span>
+            <span><span class="legend-seg" style="background:var(--red);"></span>ZONA AMBA</span>
+        </div>
+    </div>
+
+    <!-- TIPO BREAKDOWN -->
+    <div class="panel" style="flex:1;">
+        <div class="panel-title">COMPOSICIÓN DE FLOTA</div>
+        <div id="type-bars"></div>
+    </div>
+
+</div>
+
+<!-- ═══════════ COLUMNA DERECHA ═══════════ -->
+<div class="col-right">
+
+    <!-- ALERTAS -->
+    <div class="panel" style="flex:none;">
+        <div class="panel-title" style="color:var(--red);">STREAM DE ALERTAS</div>
+        <div id="alert-log">
+            <div class="alert-item" style="color:var(--muted);">• ESPERANDO DATOS DE SPARK...</div>
+        </div>
+    </div>
+
+    <!-- ANOMALÍAS -->
+    <div class="panel" style="flex:none;">
+        <div class="panel-title" style="color:var(--red);">AERONAVES ANÓMALAS</div>
+        <div id="anomaly-list">
+            <div class="anomaly-row" style="color:var(--muted);">Sin anomalías activas</div>
+        </div>
+    </div>
+
+    <!-- PAÍSES -->
+    <div class="panel" style="flex:none;">
+        <div class="panel-title">TOP PAÍSES DE ORIGEN</div>
+        <div id="countries-list">
+            <div style="color:var(--muted);font-family:var(--font-mono);font-size:9px;">Esperando datos...</div>
+        </div>
+    </div>
+
+    <!-- PIPELINE STATS -->
+    <div class="panel" style="flex:1;">
+        <div class="panel-title">PIPELINE STATS</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);line-height:2.2;letter-spacing:0.5px;">
+            <div>ENGINE      <span style="color:#e8711e;">Apache Spark ⚡</span></div>
+            <div>STREAMING   <span style="color:var(--text);">Structured Streaming</span></div>
+            <div>SOURCE      <span style="color:var(--text);">OpenSky Network</span></div>
+            <div>TRANSPORT   <span style="color:var(--cyan);">Kafka · opensky-argentina</span></div>
+            <div>API         <span style="color:var(--text);">Flask GET /state</span></div>
+            <div>PUSH        <span style="color:var(--green);">Polling 2s</span></div>
+            <div>BB LAT      <span style="color:var(--text);">-55.0° → -21.0°</span></div>
+            <div>BB LON      <span style="color:var(--text);">-74.0° → -53.0°</span></div>
+            <div>AERONAVES   <span style="color:var(--green);" id="stat-total">—</span></div>
+            <div>BATCH       <span style="color:var(--text);" id="stat-batch">—</span></div>
+            <div>ÚLTIMO UPD  <span style="color:var(--text);" id="stat-update">—</span></div>
+            <div>UPDATES     <span style="color:var(--green);" id="stat-updates">0</span></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+    <span>RADAR AÉREO ARGENTINO · SPARK STRUCTURED STREAMING → KAFKA → FLASK SSE · OPENSKY NETWORK</span>
+    <span>DATOS ADS-B · CC BY 4.0 · opensky-network.org · SOLO USO ACADÉMICO</span>
+</div>
+
+</div><!-- /shell -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   POLLING CLIENT — Fetch API
+   Se conecta a Flask /state y realiza polling periódicamente.
+   Basado en el patrón de sample_html.html
+══════════════════════════════════════════════════════════════ */
+
+const API = "/state";
+const POLL_MS = 2000;
+
+let updates = 0;
+
+const TYPE_COLORS = {
+    COMMERCIAL:       "#00d4ff",
+    CARGO:            "#ffd166",
+    MILITARY:         "#ff4b78",
+    HELICOPTER:       "#a855f7",
+    GENERAL_AVIATION: "#00ff85",
+    UNKNOWN:          "#4a5568",
+};
+const TYPE_ICONS = {
+    COMMERCIAL:"✈", CARGO:"📦", MILITARY:"⚔",
+    HELICOPTER:"🚁", GENERAL_AVIATION:"🛩", UNKNOWN:"❓",
+};
+
+const MAP_BOUNDS = [[-55, -74], [-21, -53]];
+let leafletMap = null;
+let leafletLayers = null;
+
+// Bounding Box Argentina → píxeles SVG
+const LAT_MIN=-55, LAT_MAX=-21, LON_MIN=-74, LON_MAX=-53;
+const SCATTER_W=360, SCATTER_H=170, ALT_MAX=45000, VEL_MAX=1000;
+const TL_W=360, TL_H=85;
+
+function initMap(){
+    if(leafletMap || typeof L === "undefined") return;
+    leafletMap = L.map("live-map", {
+        zoomControl: true,
+        preferCanvas: true,
+        attributionControl: true,
+        zoomSnap: 0.25,
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        subdomains: "abcd",
+        maxZoom: 18,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    }).addTo(leafletMap);
+
+    leafletLayers = {
+        heat: L.layerGroup().addTo(leafletMap),
+        trails: L.layerGroup().addTo(leafletMap),
+        aircraft: L.layerGroup().addTo(leafletMap),
+        airports: L.layerGroup().addTo(leafletMap),
+    };
+
+    [
+        {lat:-34.8222, lon:-58.5358, code:"SAEZ", label:"Ezeiza"},
+        {lat:-34.5592, lon:-58.4164, code:"SABE", label:"Aeroparque"},
+        {lat:-31.3236, lon:-64.2079, code:"SACO", label:"Cba"},
+        {lat:-24.8565, lon:-65.4862, code:"SASA", label:"Salta"},
+        {lat:-54.8433, lon:-68.2950, code:"SAWH", label:"Ushuaia"},
+    ].forEach(airport => {
+        L.circleMarker([airport.lat, airport.lon], {
+            radius: 4,
+            color: "#ffd166",
+            weight: 1,
+            fillColor: "#ffd166",
+            fillOpacity: 0.08,
+        })
+            .bindTooltip(`${airport.code} · ${airport.label}`, {direction:"top", opacity:0.9, sticky:true})
+            .addTo(leafletLayers.airports);
+    });
+
+    leafletMap.fitBounds(MAP_BOUNDS, {padding:[18,18]});
+}
+
+function aircraftColor(type){
+    return TYPE_COLORS[type] || "#4a5568";
+}
+
+function aircraftLabel(a){
+    const parts = [a.callsign || a.icao24 || "?"];
+    if(a.aircraft_type) parts.push(a.aircraft_type.replaceAll("_", " "));
+    if(a.altitude_ft) parts.push(`${Math.round(a.altitude_ft)} ft`);
+    if(a.velocity_kmh) parts.push(`${Math.round(a.velocity_kmh)} km/h`);
+    return parts.join(" · ");
+}
+
+// Utility functions
+function id(x){
+    return document.getElementById(x);
+}
+
+function n(v){
+    const x = Number(v);
+    return Number.isFinite(x) ? x : null;
+}
+
+// ── CLOCK ──────────────────────────────────────────────────
+function updateClock(){
+    const s = new Date().toISOString().slice(11,19)+" UTC";
+    id("clock").textContent = s;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── STATUS UI ──────────────────────────────────────────
+function setStatus(state){
+    const dot = id("live-dot");
+    const badge = id("sse-status");
+    dot.className = "live-dot " + state;
+    badge.className = "sse-status " + state;
+    const labels = {connected:"POLLING LIVE", disconnected:"DESCONECTADO", connecting:"CONECTANDO..."};
+    badge.textContent = labels[state] || state;
+}
+
+// ── RENDER FUNCTIONS ───────────────────────────────────────
+
+function renderMap(aircraft, trails){
+    if(!leafletMap || !leafletLayers) return;
+
+    leafletLayers.heat.clearLayers();
+    leafletLayers.trails.clearLayers();
+    leafletLayers.aircraft.clearLayers();
+
+    const density = new Map();
+    aircraft.forEach(a => {
+        if(!Number.isFinite(a.latitude) || !Number.isFinite(a.longitude)) return;
+        const clat = Math.round(a.latitude * 2) / 2;
+        const clon = Math.round(a.longitude * 2) / 2;
+        const key = `${clat},${clon}`;
+        density.set(key, (density.get(key) || 0) + 1);
+    });
+
+    const maxDensity = Math.max(...Array.from(density.values()), 1);
+    density.forEach((count, key) => {
+        const [lat, lon] = key.split(",").map(Number);
+        const alpha = 0.08 + (count / maxDensity) * 0.24;
+        L.circleMarker([lat, lon], {
+            radius: 14 + count * 2,
+            color: "#00d4ff",
+            weight: 1,
+            fillColor: "#00d4ff",
+            fillOpacity: alpha,
+            opacity: alpha,
+        }).addTo(leafletLayers.heat);
+    });
+
+    Object.entries(trails).forEach(([icao, points]) => {
+        if(points.length < 2) return;
+        const aircraftType = aircraft.find(a => a.icao24 === icao)?.aircraft_type;
+        const color = aircraftColor(aircraftType);
+        const latLngs = points
+            .filter(point => Number.isFinite(point.lat) && Number.isFinite(point.lon))
+            .map(point => [point.lat, point.lon]);
+        if(latLngs.length < 2) return;
+        L.polyline(latLngs, {
+            color,
+            weight: 2,
+            opacity: 0.28,
+            dashArray: "4,4",
+        }).addTo(leafletLayers.trails);
+    });
+
+    aircraft.forEach(a => {
+        if(!Number.isFinite(a.latitude) || !Number.isFinite(a.longitude)) return;
+        if(a.latitude < LAT_MIN || a.latitude > LAT_MAX || a.longitude < LON_MIN || a.longitude > LON_MAX) return;
+
+        const color = aircraftColor(a.aircraft_type);
+        L.circleMarker([a.latitude, a.longitude], {
+            radius: a.anomaly ? 7 : 5,
+            color: "rgba(0,0,0,0.45)",
+            weight: 1,
+            fillColor: color,
+            fillOpacity: 0.9,
+            opacity: 0.95,
+        })
+            .bindTooltip(aircraftLabel(a), {direction:"top", opacity:0.95, sticky:true})
+            .addTo(leafletLayers.aircraft);
+
+        if(a.anomaly){
+            L.circleMarker([a.latitude, a.longitude], {
+                radius: 13,
+                color,
+                weight: 1,
+                fillColor: color,
+                fillOpacity: 0.12,
+                opacity: 0.25,
+            }).addTo(leafletLayers.aircraft);
+        }
+    });
+}
+
+function renderScatter(aircraft){
+    const g = id("scatter-dots");
+    g.innerHTML = aircraft.filter(a=>!a.on_ground&&a.altitude_ft&&a.velocity_kmh).map(a=>{
+        const sx = (a.velocity_kmh/VEL_MAX)*(SCATTER_W-40)+25;
+        const sy = (1-a.altitude_ft/ALT_MAX)*(SCATTER_H-25)+10;
+        const color = TYPE_COLORS[a.aircraft_type] || "#4a5568";
+        const cx = Math.max(25,Math.min(SCATTER_W-15,sx)).toFixed(1);
+        const cy = Math.max(10,Math.min(SCATTER_H-15,sy)).toFixed(1);
+        return `<circle cx="${cx}" cy="${cy}" r="4" fill="${color}" opacity="0.75" stroke="rgba(0,0,0,0.35)" stroke-width="0.5"><title>${a.callsign||'?'}</title></circle>`;
+    }).join("");
+}
+
+function renderTimeline(totalHist, ambaHist){
+    const n = totalHist.length;
+    if(n < 2) return;
+    const maxT = Math.max(...totalHist, 1);
+    function pts(arr){
+        return arr.map((v,i)=>`${((i/(n-1))*(TL_W-20)+10).toFixed(1)},${((1-v/maxT)*(TL_H-20)+10).toFixed(1)}`).join(" ");
+    }
+    id("tl-total").setAttribute("points", pts(totalHist));
+    id("tl-amba").setAttribute("points",  pts(ambaHist));
+}
+
+function renderTypeBars(typeCounts){
+    const typeDefs = [
+        ["COMMERCIAL","#00d4ff"],["CARGO","#ffd166"],["MILITARY","#ff4b78"],
+        ["HELICOPTER","#a855f7"],["GENERAL_AVIATION","#00ff85"],["UNKNOWN","#4a5568"],
+    ];
+    const total = Object.values(typeCounts).reduce((s,v)=>s+v,0) || 1;
+    id("type-bars").innerHTML = typeDefs.map(([t,color])=>{
+        const cnt = typeCounts[t]||0;
+        if(!cnt) return "";
+        const pct = (cnt/total*100).toFixed(1);
+        const label = t.replace("_"," ");
+        const icon = TYPE_ICONS[t]||"?";
+        return `<div class="type-row">
+            <span style="font-size:13px;">${icon}</span>
+            <span class="type-label">${label}</span>
+            <div class="type-bar-wrap"><div class="type-bar" style="width:${pct}%;background:${color};"></div></div>
+            <span class="type-count" style="color:${color};">${cnt}</span>
+        </div>`;
+    }).join("");
+}
+
+function renderAlerts(alertLog){
+    if(!alertLog.length){
+        id("alert-log").innerHTML = '<div class="alert-item" style="color:var(--muted);">• MONITORING — SIN ANOMALÍAS</div>';
+        return;
+    }
+    id("alert-log").innerHTML = alertLog.slice(0,8).map(a=>{
+        const isRed = /RAPID|LOW|EMERG|7700/.test(a);
+        const color = isRed ? "#ff4b78" : "#ffd166";
+        return `<div class="alert-item"><span class="alert-dot" style="background:${color};box-shadow:0 0 5px ${color};"></span><span class="alert-text">${a}</span></div>`;
+    }).join("");
+}
+
+function renderAnomalies(anomalyAircraft){
+    if(!anomalyAircraft.length){
+        id("anomaly-list").innerHTML = '<div class="anomaly-row" style="color:var(--muted);">Sin anomalías activas</div>';
+        return;
+    }
+    id("anomaly-list").innerHTML = anomalyAircraft.slice(0,6).map(a=>
+        `<div class="anomaly-row"><span style="color:#ff4b78;font-weight:700;">${a.callsign||'?'}</span> — ${a.anomaly||''} — ${a.altitude_ft?Math.round(a.altitude_ft):'?'}ft</div>`
+    ).join("");
+}
+
+function renderCountries(topCountries){
+    if(!topCountries.length){
+        id("countries-list").innerHTML = '<div style="color:var(--muted);font-family:var(--font-mono);font-size:8px;">Sin datos</div>';
+        return;
+    }
+    const maxC = topCountries[0].count;
+    id("countries-list").innerHTML = topCountries.map(({country,count})=>
+        `<div class="country-row">
+            <span class="country-name">${(country||'?').slice(0,18)}</span>
+            <div class="country-bar-wrap"><div class="country-bar" style="width:${(count/maxC*100).toFixed(1)}%;"></div></div>
+            <span class="country-count">${count}</span>
+        </div>`
+    ).join("");
+}
+
+// ── MAIN UPDATE — llamado en cada polling ───────────────────
+function applySnapshot(snapshot){
+    const {aircraft, trails, alert_log, type_counts, total_history,
+           amba_history, stats, top_countries, anomaly_aircraft,
+           last_update, batch_id} = snapshot;
+
+    // Validación de datos
+    if(!aircraft || !stats) return;
+
+    // KPIs
+    const total = stats.total || 0;
+    const amba  = stats.amba  || 0;
+    const ambaPct = total ? (amba/total*100).toFixed(1) : "0.0";
+    const rest  = total - amba;
+
+    id("kpi-total").textContent = total;
+    id("kpi-sub-airborne").textContent = `${stats.airborne||0} en vuelo · ${total-(stats.airborne||0)} en tierra`;
+    id("kpi-amba").textContent = ambaPct+"%";
+    id("kpi-sub-amba").textContent = `${amba} de ${total} aeronaves`;
+    id("kpi-alt").textContent = stats.avg_alt_ft ? Math.round(stats.avg_alt_ft).toLocaleString() : "—";
+    id("kpi-vel").textContent = stats.avg_vel_kmh ? Math.round(stats.avg_vel_kmh) : "—";
+
+    // AMBA bar
+    id("amba-fill").style.width = ambaPct+"%";
+    id("amba-lbl-l").textContent = `■ AMBA ${amba} (${ambaPct}%)`;
+    id("amba-lbl-r").textContent = `■ RESTO ${rest} (${(100-parseFloat(ambaPct)).toFixed(1)}%)`;
+
+    // Batch / stats
+    id("batch-counter").textContent = `BATCH #${String(batch_id || 0).padStart(4,"0")}`;
+    id("stat-total").textContent = `${total} en ventana`;
+    id("stat-batch").textContent = `#${batch_id || 0}`;
+    id("stat-update").textContent = last_update ? new Date(last_update).toLocaleTimeString() : "—";
+    id("stat-updates").textContent = updates;
+
+    // Renders
+    renderMap(aircraft || [], trails || {});
+    renderScatter(aircraft || []);
+    renderTimeline(total_history || [], amba_history || []);
+    renderTypeBars(type_counts || {});
+    renderAlerts(alert_log || []);
+    renderAnomalies(anomaly_aircraft || []);
+    renderCountries(top_countries || []);
+}
+
+// ── POLLING FUNCTION ─────────────────────────────────────────
+async function poll(){
+    try {
+        const res = await fetch(API, { cache: 'no-store' });
+        if(!res.ok){
+            throw new Error('HTTP ' + res.status);
+        }
+        const snapshot = await res.json();
+        applySnapshot(snapshot || {});
+        setStatus("connected");
+        updates += 1;
+    } catch(err){
+        console.error("Poll error:", err);
+        setStatus("disconnected");
+    }
+}
+
+// Start polling
+setStatus("connecting");
+initMap();
+poll();
+setInterval(poll, POLL_MS);
+</script>
+</body>
+</html>

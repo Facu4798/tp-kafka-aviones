@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="5">
+<title>ATC RADAR — FIR BUENOS AIRES</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+    --bg:#020b04;--bg2:#030f05;--bg3:#050e08;--panel:#040d06;
+    --border:rgba(0,255,80,0.15);--border2:rgba(0,255,80,0.07);
+    --green:#00ff88;--green2:#00cc66;--green3:#007733;--dim:#1a3a20;
+    --amber:#ffaa00;--red:#ff2020;--blue:#00aaff;--white:#ccffdd;
+    --muted:#2a5a30;--font:'Share Tech Mono',monospace;--font-hd:'Orbitron',sans-serif;
+}
+html,body{background:var(--bg);color:var(--green);font-family:var(--font);font-size:12px;min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:9999;}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.55) 100%);pointer-events:none;z-index:9998;}
+
+/* HEADER */
+.header{background:linear-gradient(90deg,#020b04,#051208 50%,#020b04);border-bottom:1px solid var(--green3);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 20px rgba(0,255,80,0.08);}
+.hdr-left{display:flex;align-items:center;gap:20px;}
+.hdr-title{font-family:var(--font-hd);font-size:15px;font-weight:900;letter-spacing:4px;color:var(--green);text-shadow:0 0 15px var(--green);}
+.hdr-sub{font-size:8px;color:var(--muted);letter-spacing:3px;margin-top:2px;}
+.hdr-center{display:flex;gap:24px;align-items:center;}
+.hdr-stat{text-align:center;}
+.hdr-stat-val{font-family:var(--font-hd);font-size:19px;font-weight:800;color:var(--green);text-shadow:0 0 10px var(--green);line-height:1;}
+.hdr-stat-lbl{font-size:7px;color:var(--muted);letter-spacing:2px;margin-top:2px;}
+.hdr-right{text-align:right;}
+.hdr-time{font-family:var(--font-hd);font-size:21px;font-weight:800;color:var(--green);text-shadow:0 0 15px var(--green),0 0 30px rgba(0,255,136,0.3);letter-spacing:3px;}
+.hdr-date{font-size:9px;color:var(--muted);letter-spacing:3px;margin-top:1px;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.2s step-end infinite;display:inline-block;margin-right:6px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.1}}
+.hdr-div{width:1px;height:32px;background:var(--green3);}
+
+/* LAYOUT */
+.shell{display:grid;grid-template-columns:255px 1fr 255px;gap:1px;background:var(--border2);min-height:calc(100vh - 54px);}
+.col{background:var(--bg);}
+.col-mid{display:flex;flex-direction:column;gap:1px;background:var(--border2);}
+
+/* PANELS */
+.panel{background:var(--panel);padding:11px 13px;border-bottom:1px solid var(--border2);}
+.panel:last-child{border-bottom:none;}
+.panel-hdr{font-family:var(--font-hd);font-size:7px;font-weight:600;letter-spacing:3px;color:var(--green3);text-transform:uppercase;margin-bottom:9px;border-bottom:1px solid var(--border2);padding-bottom:5px;display:flex;align-items:center;gap:7px;}
+.panel-hdr::before{content:'■';font-size:5px;color:var(--green);text-shadow:0 0 6px var(--green);}
+.panel-hdr.red{color:var(--red);}.panel-hdr.red::before{color:var(--red);text-shadow:0 0 6px var(--red);}
+.panel-hdr.amber{color:var(--amber);}.panel-hdr.amber::before{color:var(--amber);text-shadow:0 0 6px var(--amber);}
+.panel-hdr.blue{color:var(--blue);}.panel-hdr.blue::before{color:var(--blue);text-shadow:0 0 6px var(--blue);}
+
+/* XPDR */
+.xpdr-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.xpdr-card{background:var(--bg2);border:1px solid var(--border2);padding:7px 9px;border-radius:2px;position:relative;overflow:hidden;}
+.xpdr-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.xpdr-card.mode-s::before{background:var(--green);box-shadow:0 0 8px var(--green);}
+.xpdr-card.mode-c::before{background:var(--blue);box-shadow:0 0 8px var(--blue);}
+.xpdr-card.ads-b::before{background:#00ffcc;box-shadow:0 0 8px #00ffcc;}
+.xpdr-card.mode-a::before{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+.xpdr-label{font-size:6px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px;}
+.xpdr-val{font-family:var(--font-hd);font-size:22px;font-weight:800;line-height:1;}
+.xpdr-card.mode-s .xpdr-val{color:var(--green);text-shadow:0 0 10px var(--green);}
+.xpdr-card.mode-c .xpdr-val{color:var(--blue);text-shadow:0 0 10px var(--blue);}
+.xpdr-card.ads-b  .xpdr-val{color:#00ffcc;text-shadow:0 0 10px #00ffcc;}
+.xpdr-card.mode-a .xpdr-val{color:var(--amber);text-shadow:0 0 10px var(--amber);}
+.xpdr-sub{font-size:7px;color:var(--muted);margin-top:2px;letter-spacing:1px;}
+.mode-line{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,255,80,0.04);font-size:8px;}
+.mode-line:last-child{border-bottom:none;}
+.mode-name{color:var(--muted);letter-spacing:1px;}
+.mode-info{color:var(--green2);}
+
+/* CONFLICTS */
+.conflict-row{display:grid;grid-template-columns:38px 70px 20px 70px 1fr;align-items:center;gap:5px;padding:5px 6px;margin-bottom:4px;background:rgba(255,32,32,0.05);border-radius:2px;font-size:10px;}
+.cf-badge{font-size:8px;font-weight:700;letter-spacing:1px;}
+.cf-cs{color:var(--white);font-size:10px;letter-spacing:1px;}
+.cf-sep{color:var(--muted);text-align:center;}
+.cf-data{font-size:9px;color:var(--amber);text-align:right;}
+
+/* SOURCE */
+.source-wrap{display:flex;align-items:center;gap:14px;}
+.src-leg{display:flex;align-items:center;gap:5px;margin-bottom:5px;font-size:9px;}
+.src-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.src-lbl{color:var(--muted);width:48px;letter-spacing:1px;}
+.src-cnt{font-size:9px;}
+
+/* SQUAWK */
+.sq-special-row{display:grid;grid-template-columns:50px 78px 76px 1fr;align-items:center;gap:5px;padding:5px 5px;margin-bottom:4px;background:rgba(255,32,32,0.06);border-radius:2px;font-size:10px;}
+.sq-code{font-family:var(--font-hd);font-size:15px;font-weight:700;letter-spacing:2px;}
+.sq-meaning{font-size:7px;letter-spacing:2px;}
+.sq-cs{color:var(--white);}
+.sq-alt{color:var(--muted);font-size:9px;text-align:right;}
+.sq-row{display:grid;grid-template-columns:50px 1fr 26px;align-items:center;gap:5px;margin-bottom:4px;}
+.sq-num{color:var(--green2);font-size:10px;letter-spacing:2px;}
+.sq-bar-wrap{height:4px;background:rgba(0,255,80,0.06);border-radius:2px;}
+.sq-bar{height:100%;border-radius:2px;background:var(--green3);}
+.sq-cnt{color:var(--muted);font-size:9px;text-align:right;}
+
+/* BARO/GEO */
+.disc-row{display:grid;grid-template-columns:68px 50px 10px 50px 54px;align-items:center;gap:4px;padding:4px 0;border-bottom:1px solid var(--border2);font-size:9px;}
+.disc-row:last-child{border-bottom:none;}
+.disc-cs{color:var(--white);font-size:10px;}
+.disc-baro{color:var(--blue);text-align:right;}
+.disc-geo{color:var(--amber);}
+.disc-sep{color:var(--muted);text-align:center;}
+.disc-diff{font-size:10px;font-weight:700;text-align:right;}
+
+/* SECTOR */
+.sector-row{display:grid;grid-template-columns:88px 1fr 26px;align-items:center;gap:6px;margin-bottom:6px;}
+.sector-name{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.sector-bar-wrap{height:6px;background:rgba(0,255,80,0.05);border-radius:1px;overflow:hidden;}
+.sector-bar{height:100%;border-radius:1px;transition:width 0.6s ease;}
+.sector-count{font-family:var(--font-hd);font-size:11px;text-align:right;}
+
+/* FL */
+.fl-row{display:grid;grid-template-columns:50px 1fr 26px;align-items:center;gap:5px;margin-bottom:4px;}
+.fl-label{font-size:8px;color:var(--muted);letter-spacing:1px;}
+.fl-bar-wrap{height:5px;background:rgba(0,255,80,0.05);border-radius:1px;overflow:hidden;}
+.fl-bar{height:100%;border-radius:1px;}
+.fl-cnt{font-size:9px;color:var(--green2);text-align:right;}
+
+/* ARRIVALS / DEP */
+.mov-row{display:grid;grid-template-columns:30px 70px 38px 42px 56px 1fr;align-items:center;gap:4px;padding:4px 5px;margin-bottom:3px;font-size:9px;border-radius:2px;}
+.mov-row.arr{background:rgba(0,255,136,0.04);border-left:2px solid var(--green3);}
+.mov-row.dep{background:rgba(255,170,0,0.04);border-left:2px solid rgba(255,170,0,0.4);}
+.arr-badge{background:rgba(0,255,136,0.15);color:var(--green);font-size:7px;letter-spacing:1px;padding:1px 3px;border-radius:1px;text-align:center;}
+.dep-badge{background:rgba(255,170,0,0.15);color:var(--amber);font-size:7px;letter-spacing:1px;padding:1px 3px;border-radius:1px;text-align:center;}
+.mov-cs{color:var(--white);letter-spacing:1px;}
+.mov-ap{color:var(--blue);font-size:8px;}
+.mov-dist{color:var(--muted);}
+.mov-alt{color:var(--green2);}
+.mov-eta{font-size:9px;font-weight:700;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.stat-item{background:var(--bg2);border:1px solid var(--border2);padding:7px 8px;border-radius:2px;}
+.stat-lbl{font-size:7px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.stat-val{font-family:var(--font-hd);font-size:16px;font-weight:700;color:var(--green);text-shadow:0 0 8px var(--green);}
+.stat-sub{font-size:8px;color:var(--muted);margin-top:1px;}
+
+/* AIRPORTS */
+.ap-row{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2);align-items:flex-start;}
+.ap-row:last-child{border-bottom:none;}
+.ap-id{font-family:var(--font-hd);font-size:11px;font-weight:700;color:var(--green);text-shadow:0 0 6px var(--green);min-width:38px;}
+.ap-info{flex:1;}
+.ap-name{font-size:9px;color:var(--white);letter-spacing:0.5px;}
+.ap-detail{font-size:8px;color:var(--muted);margin-top:1px;letter-spacing:0.5px;}
+
+.no-alert{font-size:9px;color:var(--green3);letter-spacing:2px;padding:8px 0;text-align:center;text-transform:uppercase;}
+@keyframes sweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.radar-sweep{animation:sweep 4s linear infinite;transform-origin:center;}
+
+.footer{background:var(--bg2);border-top:1px solid var(--green3);padding:7px 20px;display:flex;justify-content:space-between;font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<header class="header">
+    <div class="hdr-left">
+        <div><span class="live-dot"></span><span style="font-size:9px;color:var(--green2);letter-spacing:2px;">LIVE</span></div>
+        <div class="hdr-div"></div>
+        <div>
+            <div class="hdr-title">FIR BUENOS AIRES — ATC MONITOR</div>
+            <div class="hdr-sub">OPENSKY NETWORK → KAFKA STREAM → AVIONICS DASHBOARD v2.0</div>
+        </div>
+    </div>
+    <div class="hdr-center">
+        <div class="hdr-stat"><div class="hdr-stat-val">0</div><div class="hdr-stat-lbl">TOTAL ACFT</div></div>
+        <div class="hdr-div"></div>
+        <div class="hdr-stat"><div class="hdr-stat-val" style="color:#00ffcc;">0</div><div class="hdr-stat-lbl">ADS-B</div></div>
+        <div class="hdr-div"></div>
+        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--blue);">0</div><div class="hdr-stat-lbl">MLAT</div></div>
+        <div class="hdr-div"></div>
+        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--amber);">0</div><div class="hdr-stat-lbl">AVG ALT FT</div></div>
+        <div class="hdr-div"></div>
+        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--green);">0</div><div class="hdr-stat-lbl">CONFLICTS</div></div>
+        <div class="hdr-div"></div>
+        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--green);">2</div><div class="hdr-stat-lbl">ARRIVALS</div></div>
+        <div class="hdr-div"></div>
+        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--amber);">0</div><div class="hdr-stat-lbl">DEPARTURES</div></div>
+    </div>
+    <div class="hdr-right">
+        <div class="hdr-time">23:28:01Z</div>
+        <div class="hdr-date">25APR2026 · ZULU TIME</div>
+    </div>
+</header>
+
+<div class="shell">
+
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="col">
+        <div class="panel">
+            <div class="panel-hdr">TRANSPONDER MONITOR — MODE A/C/S/ADS-B</div>
+            <div class="xpdr-grid">
+                <div class="xpdr-card mode-s">
+                    <div class="xpdr-label">MODE S / ADS-B</div>
+                    <div class="xpdr-val">0</div>
+                    <div class="xpdr-sub">ICAO24 · 1090MHz ES</div>
+                </div>
+                <div class="xpdr-card mode-c">
+                    <div class="xpdr-label">MLAT TRACKED</div>
+                    <div class="xpdr-val">0</div>
+                    <div class="xpdr-sub">MULTILATERATION</div>
+                </div>
+                <div class="xpdr-card ads-b">
+                    <div class="xpdr-label">ADS-B EXT DO-260B</div>
+                    <div class="xpdr-val">0</div>
+                    <div class="xpdr-sub">GPS POS · NUC≥7</div>
+                </div>
+                <div class="xpdr-card mode-a">
+                    <div class="xpdr-label">ASTERIX CAT048</div>
+                    <div class="xpdr-val">0</div>
+                    <div class="xpdr-sub">SSR SECUNDARIO</div>
+                </div>
+            </div>
+            <div style="margin-top:9px;border-top:1px solid var(--border2);padding-top:7px;">
+                <div class="mode-line"><span class="mode-name">FREQ TX</span><span class="mode-info">1090 MHz ES / 978 UAT</span></div>
+                <div class="mode-line"><span class="mode-name">PROTOCOLO</span><span class="mode-info">DO-260B / RTCA SC-186</span></div>
+                <div class="mode-line"><span class="mode-name">SPI ACTIVE</span><span class="mode-info" style="color:var(--green3);">0 ACFT IDENT</span></div>
+                <div class="mode-line"><span class="mode-name">ON GROUND</span><span class="mode-info">0 / 0 ACFT</span></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-hdr red">SQUAWK — EMERGENCY / SPECIAL CODES</div>
+            <div class="no-alert">SQUAWK 7000 VFR / NO EMERGENCY</div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-hdr">SQUAWK DISTRIBUTION — MODE A CODES</div>
+            <div class="no-alert">NO SQUAWK DATA</div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-hdr amber">ALTIMETRÍA BARO vs GEO — QNH DISCREPANCY CHECK</div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--muted);margin-bottom:5px;letter-spacing:1px;">
+                <span>CALLSIGN</span><span>BARO</span><span>/</span><span>GEO</span><span>Δ ERR</span>
+            </div>
+            <div class="no-alert">BARO/GEO WITHIN TOLERANCE</div>
+        </div>
+    </div>
+
+    <!-- COLUMNA CENTRO -->
+    <div class="col-mid">
+
+        <div class="panel">
+            <div class="panel-hdr red">CONFLICT ALERT — TCAS SEPARATION MONITOR</div>
+            <div style="font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;display:flex;gap:16px;">
+                <span>CRITICAL: &lt;3NM / &lt;500ft</span>
+                <span>WARNING: &lt;5NM / &lt;1000ft</span>
+                <span style="color:var(--green3);">ICAO DOC 4444 PANS-ATM</span>
+            </div>
+            <div class="no-alert">NO CONFLICTS DETECTED — SEP OK</div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-hdr blue">ARRIVALS &amp; DEPARTURES — SAEZ · SABE TRAFFIC FEED</div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--muted);letter-spacing:2px;margin-bottom:5px;text-transform:uppercase;border-bottom:1px solid var(--border2);padding-bottom:4px;">
+                <span>TYPE</span><span>CALLSIGN</span><span>ARPT</span><span>DIST</span><span>ALT</span><span>ETA/CLB</span>
+            </div>
+            
+        <div class="mov-row arr">
+            <span class="mov-type arr-badge">ARR</span>
+            <span class="mov-cs">N/A</span>
+            <span class="mov-ap">SABE</span>
+            <span class="mov-dist">26.3NM</span>
+            <span class="mov-alt">12,775ft</span>
+            <span class="mov-eta" style="color:#00ff88;">ETA 5'</span>
+        </div>
+        <div class="mov-row arr">
+            <span class="mov-type arr-badge">ARR</span>
+            <span class="mov-cs">ARG1265</span>
+            <span class="mov-ap">SABE</span>
+            <span class="mov-dist">8.2NM</span>
+            <span class="mov-alt">2,525ft</span>
+            <span class="mov-eta" style="color:#00ff88;">ETA 3'</span>
+        </div>
+            <div style="height:5px;border-top:1px dashed rgba(0,255,80,0.08);margin:6px 0 6px;"></div>
+            <div class="no-alert">NO DEPARTURES TRACKED</div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-hdr">FLIGHT LEVEL DISTRIBUTION — RVSM FL290–FL410</div>
+            <div style="font-size:7px;color:var(--muted);margin-bottom:6px;letter-spacing:1px;">ICAO ANNEX 2 · RVSM 1000ft VERTICAL SEP · STANDARD 2000ft BELOW FL290</div>
+            <div class="no-alert">NO ALTITUDE DATA</div>
+        </div>
+
+        <div class="panel" style="flex:1;">
+            <div class="panel-hdr">SURVEILLANCE SOURCE MIX — DATALINK ANALYSIS</div>
+            <div class="source-wrap">
+                <svg viewBox="0 0 120 120" width="110" height="110" style="flex-shrink:0;">
+                    <circle cx="60" cy="60" r="57" fill="none" stroke="rgba(0,255,80,0.06)" stroke-width="1"/>
+                    <circle cx="60" cy="60" r="40" fill="none" stroke="rgba(0,255,80,0.04)" stroke-width="1"/>
+                    <circle cx="60" cy="60" r="20" fill="none" stroke="rgba(0,255,80,0.04)" stroke-width="1"/>
+                    <g class="radar-sweep"><line x1="60" y1="60" x2="117" y2="60" stroke="rgba(0,255,80,0.15)" stroke-width="1.5"/></g>
+                    <circle cx="60" cy="60" r="30" fill="#050e08"/><text x="60" y="57" text-anchor="middle" fill="#00ff88" font-family="'Share Tech Mono',monospace" font-size="14" font-weight="700">0</text><text x="60" y="70" text-anchor="middle" fill="#335533" font-family="'Share Tech Mono',monospace" font-size="8">ACFT</text>
+                </svg>
+                <div style="flex:1;"><div class="src-leg"><span class="src-dot" style="background:#00ff88;box-shadow:0 0 5px #00ff88;"></span><span class="src-lbl">ADS-B</span><span class="src-cnt" style="color:#00ff88;">0 (0.0%)</span></div><div class="src-leg"><span class="src-dot" style="background:#00aaff;box-shadow:0 0 5px #00aaff;"></span><span class="src-lbl">MLAT</span><span class="src-cnt" style="color:#00aaff;">0 (0.0%)</span></div><div class="src-leg"><span class="src-dot" style="background:#ffaa00;box-shadow:0 0 5px #ffaa00;"></span><span class="src-lbl">ASTERIX</span><span class="src-cnt" style="color:#ffaa00;">0 (0.0%)</span></div><div class="src-leg"><span class="src-dot" style="background:#335533;box-shadow:0 0 5px #335533;"></span><span class="src-lbl">UNKN</span><span class="src-cnt" style="color:#335533;">0 (0.0%)</span></div></div>
+            </div>
+            <div style="margin-top:8px;font-size:8px;color:var(--muted);letter-spacing:1px;border-top:1px solid var(--border2);padding-top:7px;line-height:1.9;">
+                <div>ADS-B   · DO-260B · 1090MHz Extended Squitter · GPS position</div>
+                <div>MLAT    · TDOA multilateration · ≥4 ground receivers</div>
+                <div>ASTERIX · CAT048 radar plots · SSR Mode C/S returns</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- COLUMNA DERECHA -->
+    <div class="col">
+
+        <div class="panel">
+            <div class="panel-hdr">FIR SECTOR LOAD — BUENOS AIRES ACC</div>
+            <div style="font-size:7px;color:var(--muted);margin-bottom:7px;letter-spacing:1px;">MAX CAPACITY: 25 ACFT/SECTOR · ICAO DOC 9426</div>
+            <div class="no-alert">NO SECTOR DATA</div>
+            <div style="margin-top:7px;font-size:8px;color:var(--muted);display:flex;gap:10px;border-top:1px solid var(--border2);padding-top:6px;flex-wrap:wrap;">
+                <span style="color:var(--green);">■ NORMAL &lt;12</span>
+                <span style="color:var(--amber);">■ HIGH 12–20</span>
+                <span style="color:var(--red);">■ OVERLOAD &gt;20</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-hdr">SYSTEM STATUS — ATC DATA PIPELINE</div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-lbl">TRACKED</div>
+                    <div class="stat-val">0</div>
+                    <div class="stat-sub">AERONAVES</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-lbl">AIRBORNE</div>
+                    <div class="stat-val" style="color:#00ffcc;">0</div>
+                    <div class="stat-sub">EN VUELO</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-lbl">MAX FL</div>
+                    <div class="stat-val" style="font-size:13px;color:var(--blue);">FL000</div>
+                    <div class="stat-sub">0 FT</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-lbl">AVG GS</div>
+                    <div class="stat-val" style="font-size:13px;color:var(--amber);">0</div>
+                    <div class="stat-sub">KM/H</div>
+                </div>
+            </div>
+            <div style="margin-top:9px;font-size:8px;color:var(--muted);letter-spacing:1px;line-height:2;border-top:1px solid var(--border2);padding-top:7px;">
+                <div>KAFKA TOPIC  <span style="color:var(--green2);">opensky-argentina</span></div>
+                <div>POLL INT     <span style="color:var(--green2);">10s anónimo</span></div>
+                <div>REFRESH      <span style="color:var(--green2);">5s meta</span></div>
+                <div>BARO DISC    <span style="color:var(--green2);">0 alertas QNH</span></div>
+                <div>SPI IDENT    <span style="color:var(--green2);">0 activos</span></div>
+                <div>ARRIVALS     <span style="color:var(--green2);">2 en approach</span></div>
+                <div>DEPARTURES   <span style="color:var(--green2);">0 en climb</span></div>
+            </div>
+        </div>
+
+        <div class="panel" style="flex:1;">
+            <div class="panel-hdr">AEROPUERTOS — FIR BUENOS AIRES</div>
+            
+        <div class="ap-row">
+            <span class="ap-id">SAEZ</span>
+            <div class="ap-info">
+                <div class="ap-name">Ezeiza Ministro Pistarini</div>
+                <div class="ap-detail">RWY 11/29 · ELEV 67ft · -34.82/-58.54</div>
+            </div>
+        </div>
+        <div class="ap-row">
+            <span class="ap-id">SABE</span>
+            <div class="ap-info">
+                <div class="ap-name">Aeroparque Jorge Newbery</div>
+                <div class="ap-detail">RWY 13/31 · ELEV 13ft · -34.56/-58.42</div>
+            </div>
+        </div>
+        <div class="ap-row">
+            <span class="ap-id">SACO</span>
+            <div class="ap-info">
+                <div class="ap-name">Córdoba Ambrosio Taravella</div>
+                <div class="ap-detail">RWY 18/36 · ELEV 1604ft · -31.32/-64.21</div>
+            </div>
+        </div>
+        <div class="ap-row">
+            <span class="ap-id">SASJ</span>
+            <div class="ap-info">
+                <div class="ap-name">San Salvador de Jujuy</div>
+                <div class="ap-detail">RWY 09/27 · ELEV 3019ft · -24.39/-65.10</div>
+            </div>
+        </div>
+        <div class="ap-row">
+            <span class="ap-id">SAWH</span>
+            <div class="ap-info">
+                <div class="ap-name">Malvinas Argentinas Ushuaia</div>
+                <div class="ap-detail">RWY 07/25 · ELEV 102ft · -54.84/-68.30</div>
+            </div>
+        </div>
+        <div class="ap-row">
+            <span class="ap-id">SAME</span>
+            <div class="ap-info">
+                <div class="ap-name">Mendoza El Plumerillo</div>
+                <div class="ap-detail">RWY 18/36 · ELEV 2310ft · -32.83/-68.79</div>
+            </div>
+        </div>
+        </div>
+
+    </div>
+
+</div>
+
+<footer class="footer">
+    <span>FIR BUENOS AIRES ATC MONITOR · ICAO: SAEF · ACC: CENTRO DE CONTROL EZEIZA · ANAC ARGENTINA</span>
+    <span>DATOS: OPENSKY NETWORK CC BY 4.0 · NON-COMMERCIAL · opensky-network.org</span>
+</footer>
+</body>
+</html>
