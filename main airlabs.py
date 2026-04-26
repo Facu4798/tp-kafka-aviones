@@ -7,6 +7,10 @@ import subprocess
 import shutil
 os.system("clear")
 
+
+os.makedirs("tmp",exist_ok=True)
+os.makedirs("credentials",exist_ok=True)
+
 ## remove checkpoint dir
 if os.path.isdir("tmp/checkpoint"):
     shutil.rmtree("tmp/checkpoint")
@@ -419,19 +423,6 @@ def feb(df,batch_id):
             "anomaly_aircraft": [ar.asDict() for ar in anomaly_rows],
         }
 
-    # if batch_id == 1:
-    #     print(json.dumps(snapshot, indent=4))
-
-    # # Encolar para SSE (non-blocking: si la cola está llena, descartar el más viejo)
-    # try:
-    #     sse_queue.put_nowait(snapshot)
-    # except queue.Full:
-    #     try:
-    #         sse_queue.get_nowait()
-    #     except queue.Empty:
-    #         pass
-    #     sse_queue.put_nowait(snapshot)
-
     import requests
     requests.post("http://localhost:5000/post_message", json=snapshot)
 
@@ -623,10 +614,11 @@ def classify_arrival_departure(aircraft, icao24):
 
 
 # ─── GENERADOR HTML ─────────────────────────────────────────────
-def generate_atc_dashboard():
+def generate_atc_dashboard(aircraft_state):
     now_str  = datetime.now(timezone.utc).strftime("%H:%M:%S")
     date_str = datetime.now(timezone.utc).strftime("%d%b%Y").upper()
     total    = len(aircraft_state)
+    print(f"total aircraft: {aircraft_state}")
     airborne = sum(1 for a in aircraft_state.values() if not a.get("on_ground"))
 
     # Source counts
@@ -711,7 +703,7 @@ def generate_atc_dashboard():
     # ── HTML BLOCKS ─────────────────────────────────────────────
     conflicts_html = ""
     for cf in conflicts:
-        c = "#ff2020" if cf["severity"] == "CRITICAL" else "#ffaa00"
+        c = "#ff4b78" if cf["severity"] == "CRITICAL" else "#ffd166"
         conflicts_html += f"""
         <div class="conflict-row" style="border-left:3px solid {c};">
             <span class="cf-badge" style="color:{c};">{cf['severity'][:4]}</span>
@@ -724,12 +716,12 @@ def generate_atc_dashboard():
         conflicts_html = '<div class="no-alert">NO CONFLICTS DETECTED — SEP OK</div>'
 
     special_sq_html = ""
-    sq_colors = {"7700":"#ff2020","7600":"#ffaa00","7500":"#ff00ff","7000":"#00ff88"}
+    sq_colors = {"7700":"#ff4b78","7600":"#ffd166","7500":"#a855f7","7000":"#00ff85"}
     for s in special_squawks[:6]:
-        c = sq_colors.get(s["squawk"], "#aaffaa")
+        c = sq_colors.get(s["squawk"], "#c8d8e8")
         special_sq_html += f"""
         <div class="sq-special-row">
-            <span class="sq-code" style="color:{c};text-shadow:0 0 8px {c};">{s['squawk']}</span>
+            <span class="sq-code" style="color:{c};">{s['squawk']}</span>
             <span class="sq-meaning" style="color:{c};">{s['meaning']}</span>
             <span class="sq-cs">{s['callsign'][:10]}</span>
             <span class="sq-alt">{s['alt_ft'] or '?'} ft</span>
@@ -740,7 +732,7 @@ def generate_atc_dashboard():
     disc_html = ""
     for d in discrepancies[:6]:
         arrow = "▲" if d["diff_ft"] > 0 else "▼"
-        c = "#ff4444" if d["severity"] == "HIGH" else "#ffaa00"
+        c = "#ff4b78" if d["severity"] == "HIGH" else "#ffd166"
         disc_html += f"""
         <div class="disc-row">
             <span class="disc-cs">{d['callsign'][:9]}</span>
@@ -756,12 +748,12 @@ def generate_atc_dashboard():
     max_load = 25
     for sec_name, count in sorted(sector_counts.items(), key=lambda x: -x[1]):
         pct   = min(count / max_load * 100, 100)
-        color = "#ff2020" if count > 20 else "#ffaa00" if count > 12 else "#00ff88"
+        color = "#ff4b78" if count > 20 else "#ffd166" if count > 12 else "#00ff85"
         sector_html += f"""
         <div class="sector-row">
             <span class="sector-name">{sec_name[:12]}</span>
             <div class="sector-bar-wrap">
-                <div class="sector-bar" style="width:{pct:.0f}%;background:{color};box-shadow:0 0 6px {color};"></div>
+                <div class="sector-bar" style="width:{pct:.0f}%;background:{color};"></div>
             </div>
             <span class="sector-count" style="color:{color};">{count:02d}</span>
         </div>"""
@@ -791,18 +783,18 @@ def generate_atc_dashboard():
         return f'<path d="M {cx} {cy} L {x1:.1f} {y1:.1f} A {r} {r} 0 {lg} 1 {x2:.1f} {y2:.1f} Z" fill="{color}" opacity="0.85"/>'
 
     src_arcs  = ""
-    src_data  = [("ADS-B", adsb_count, "#00ff88"), ("MLAT", mlat_count, "#00aaff"),
-                 ("ASTERIX", asterix_count, "#ffaa00"), ("UNKN", unk_count, "#335533")]
+    src_data  = [("ADS-B", adsb_count, "#00ff85"), ("MLAT", mlat_count, "#5b9df5"),
+                 ("ASTERIX", asterix_count, "#ffd166"), ("UNKN", unk_count, "#3d4d5e")]
     accum = 0
     for label, cnt, color in src_data:
         frac = cnt / total_src
         src_arcs += svg_arc(60, 60, 50, accum, accum + frac, color)
         accum += frac
-    src_arcs += (f'<circle cx="60" cy="60" r="30" fill="#050e08"/>'
-                 f'<text x="60" y="57" text-anchor="middle" fill="#00ff88" '
-                 f'font-family="\'Share Tech Mono\',monospace" font-size="14" font-weight="700">{total}</text>'
-                 f'<text x="60" y="70" text-anchor="middle" fill="#335533" '
-                 f'font-family="\'Share Tech Mono\',monospace" font-size="8">ACFT</text>')
+    src_arcs += (f'<circle cx="60" cy="60" r="30" fill="#111822"/>'
+                 f'<text x="60" y="57" text-anchor="middle" fill="#00d4ff" '
+                 f'font-family="\'Space Mono\',monospace" font-size="14" font-weight="700">{total}</text>'
+                 f'<text x="60" y="70" text-anchor="middle" fill="#3d4d5e" '
+                 f'font-family="\'Space Mono\',monospace" font-size="8">ACFT</text>')
 
     src_legend = ""
     for label, cnt, color in src_data:
@@ -818,7 +810,7 @@ def generate_atc_dashboard():
         cnt = fl_dist[fl]
         pct = cnt / max_fl * 100
         fl_label = f"FL{fl//100:03d}+" if fl > 0 else "GND  "
-        c = "#00ff88" if fl > 25000 else "#00aaff" if fl > 10000 else "#ffaa00"
+        c = "#00ff85" if fl > 25000 else "#5b9df5" if fl > 10000 else "#ffd166"
         fl_html += f"""
         <div class="fl-row">
             <span class="fl-label">{fl_label}</span>
@@ -837,7 +829,7 @@ def generate_atc_dashboard():
             <span class="mov-ap">{f['airport']}</span>
             <span class="mov-dist">{f['dist_nm']}NM</span>
             <span class="mov-alt">{int(f['alt_ft']):,}ft</span>
-            <span class="mov-eta" style="color:#00ff88;">ETA {eta_str}</span>
+            <span class="mov-eta" style="color:var(--cyan);">ETA {eta_str}</span>
         </div>"""
     if not arr_html:
         arr_html = '<div class="no-alert">NO ARRIVALS TRACKED</div>'
@@ -852,7 +844,7 @@ def generate_atc_dashboard():
             <span class="mov-ap">{f['airport']}</span>
             <span class="mov-dist">{f['dist_nm']}NM</span>
             <span class="mov-alt">{int(f['alt_ft']):,}ft</span>
-            <span class="mov-eta" style="color:#ffaa00;">+{fpm}fpm</span>
+            <span class="mov-eta" style="color:var(--gold);">+{fpm}fpm</span>
         </div>"""
     if not dep_html:
         dep_html = '<div class="no-alert">NO DEPARTURES TRACKED</div>'
@@ -868,7 +860,7 @@ def generate_atc_dashboard():
             </div>
         </div>"""
 
-    conflict_color = "var(--red)" if conflicts else "var(--green)"
+    conflict_color = "var(--red)" if conflicts else "var(--cyan)"
 
     # ══════════════════════════════════════════════════════════════
     # HTML FINAL
@@ -879,151 +871,111 @@ def generate_atc_dashboard():
 <meta charset="UTF-8">
 <meta http-equiv="refresh" content="{REFRESH_INTERVAL}">
 <title>ATC RADAR — FIR BUENOS AIRES</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
 :root{{
-    --bg:#020b04;--bg2:#030f05;--bg3:#050e08;--panel:#040d06;
-    --border:rgba(0,255,80,0.15);--border2:rgba(0,255,80,0.07);
-    --green:#00ff88;--green2:#00cc66;--green3:#007733;--dim:#1a3a20;
-    --amber:#ffaa00;--red:#ff2020;--blue:#00aaff;--white:#ccffdd;
-    --muted:#2a5a30;--font:'Share Tech Mono',monospace;--font-hd:'Orbitron',sans-serif;
+    --bg:#080c10; --panel:#0d1117; --panel2:#111822;
+    --border:rgba(0,212,255,0.12); --border2:rgba(255,255,255,0.06);
+    --cyan:#00d4ff; --green:#00ff85; --red:#ff4b78;
+    --gold:#ffd166; --purple:#a855f7; --blue:#5b9df5;
+    --muted:#3d4d5e; --text:#c8d8e8; --text-dim:#6b7f91;
+    --font-mono:'Space Mono',monospace;
+    --font-ui:'Barlow Condensed',sans-serif;
+    --radius:10px;
+    --transition:0.4s ease;
+    --amber:var(--gold);
+    --white:#e8f4ff;
+    --green2:#00cc88;
+    --green3:rgba(0,212,255,0.2);
+    --font:var(--font-mono);
+    --font-hd:var(--font-ui);
 }}
-html,body{{background:var(--bg);color:var(--green);font-family:var(--font);font-size:12px;min-height:100vh;overflow-x:hidden;}}
-body::after{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:9999;}}
-body::before{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.55) 100%);pointer-events:none;z-index:9998;}}
-
-/* HEADER */
-.header{{background:linear-gradient(90deg,#020b04,#051208 50%,#020b04);border-bottom:1px solid var(--green3);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 20px rgba(0,255,80,0.08);}}
+html,body{{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:14px;line-height:1.4;min-height:100vh;overflow-x:hidden;}}
+body::before{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:9999;}}
+body::after{{display:none;}}
+.header{{background:linear-gradient(90deg,#0a0f15 0%,#0d1420 100%);border-bottom:1px solid var(--border);padding:0 22px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}}
 .hdr-left{{display:flex;align-items:center;gap:20px;}}
-.hdr-title{{font-family:var(--font-hd);font-size:15px;font-weight:900;letter-spacing:4px;color:var(--green);text-shadow:0 0 15px var(--green);}}
-.hdr-sub{{font-size:8px;color:var(--muted);letter-spacing:3px;margin-top:2px;}}
-.hdr-center{{display:flex;gap:24px;align-items:center;}}
+.hdr-title{{font-family:var(--font-ui);font-size:17px;font-weight:900;letter-spacing:3px;text-transform:uppercase;color:#fff;}}
+.hdr-sub{{font-family:var(--font-mono);font-size:8px;color:var(--text-dim);letter-spacing:2px;margin-top:2px;}}
+.hdr-center{{display:flex;gap:18px;align-items:center;}}
 .hdr-stat{{text-align:center;}}
-.hdr-stat-val{{font-family:var(--font-hd);font-size:19px;font-weight:800;color:var(--green);text-shadow:0 0 10px var(--green);line-height:1;}}
-.hdr-stat-lbl{{font-size:7px;color:var(--muted);letter-spacing:2px;margin-top:2px;}}
+.hdr-stat-val{{font-family:var(--font-ui);font-size:20px;font-weight:900;color:var(--cyan);line-height:1;}}
+.hdr-stat-lbl{{font-family:var(--font-mono);font-size:7px;color:var(--text-dim);letter-spacing:2px;margin-top:2px;}}
 .hdr-right{{text-align:right;}}
-.hdr-time{{font-family:var(--font-hd);font-size:21px;font-weight:800;color:var(--green);text-shadow:0 0 15px var(--green),0 0 30px rgba(0,255,136,0.3);letter-spacing:3px;}}
-.hdr-date{{font-size:9px;color:var(--muted);letter-spacing:3px;margin-top:1px;}}
-.live-dot{{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.2s step-end infinite;display:inline-block;margin-right:6px;}}
+.hdr-time{{font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--cyan);letter-spacing:3px;}}
+.hdr-date{{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-top:1px;}}
+.live-dot{{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse-dot 1.4s ease-in-out infinite;display:inline-block;margin-right:6px;}}
+@keyframes pulse-dot{{0%,100%{{opacity:1;transform:scale(1);}}50%{{opacity:0.5;transform:scale(1.3);}}}}
 @keyframes blink{{0%,100%{{opacity:1}}50%{{opacity:0.1}}}}
-.hdr-div{{width:1px;height:32px;background:var(--green3);}}
-
-/* LAYOUT */
+.hdr-div{{width:1px;height:32px;background:var(--border);}}
 .shell{{display:grid;grid-template-columns:255px 1fr 255px;gap:1px;background:var(--border2);min-height:calc(100vh - 54px);}}
 .col{{background:var(--bg);}}
 .col-mid{{display:flex;flex-direction:column;gap:1px;background:var(--border2);}}
-
-/* PANELS */
-.panel{{background:var(--panel);padding:11px 13px;border-bottom:1px solid var(--border2);}}
+.panel{{background:var(--panel);padding:14px;border-bottom:1px solid var(--border2);}}
 .panel:last-child{{border-bottom:none;}}
-.panel-hdr{{font-family:var(--font-hd);font-size:7px;font-weight:600;letter-spacing:3px;color:var(--green3);text-transform:uppercase;margin-bottom:9px;border-bottom:1px solid var(--border2);padding-bottom:5px;display:flex;align-items:center;gap:7px;}}
-.panel-hdr::before{{content:'■';font-size:5px;color:var(--green);text-shadow:0 0 6px var(--green);}}
-.panel-hdr.red{{color:var(--red);}}.panel-hdr.red::before{{color:var(--red);text-shadow:0 0 6px var(--red);}}
-.panel-hdr.amber{{color:var(--amber);}}.panel-hdr.amber::before{{color:var(--amber);text-shadow:0 0 6px var(--amber);}}
-.panel-hdr.blue{{color:var(--blue);}}.panel-hdr.blue::before{{color:var(--blue);text-shadow:0 0 6px var(--blue);}}
-
-/* XPDR */
+.panel-hdr{{font-family:var(--font-mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);opacity:0.7;margin-bottom:11px;display:flex;align-items:center;gap:8px;border-bottom:none;padding-bottom:0;}}
+.panel-hdr::before{{content:'';display:inline-block;width:3px;height:12px;background:var(--cyan);border-radius:2px;opacity:1;}}
+.panel-hdr.red{{color:var(--red);opacity:1;}}.panel-hdr.red::before{{background:var(--red);}}
+.panel-hdr.amber{{color:var(--gold);opacity:1;}}.panel-hdr.amber::before{{background:var(--gold);}}
+.panel-hdr.blue{{color:var(--blue);opacity:1;}}.panel-hdr.blue::before{{background:var(--blue);}}
 .xpdr-grid{{display:grid;grid-template-columns:1fr 1fr;gap:7px;}}
-.xpdr-card{{background:var(--bg2);border:1px solid var(--border2);padding:7px 9px;border-radius:2px;position:relative;overflow:hidden;}}
+.xpdr-card{{background:var(--panel2);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 11px;position:relative;overflow:hidden;}}
 .xpdr-card::before{{content:'';position:absolute;top:0;left:0;right:0;height:2px;}}
-.xpdr-card.mode-s::before{{background:var(--green);box-shadow:0 0 8px var(--green);}}
-.xpdr-card.mode-c::before{{background:var(--blue);box-shadow:0 0 8px var(--blue);}}
-.xpdr-card.ads-b::before{{background:#00ffcc;box-shadow:0 0 8px #00ffcc;}}
-.xpdr-card.mode-a::before{{background:var(--amber);box-shadow:0 0 8px var(--amber);}}
-.xpdr-label{{font-size:6px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px;}}
-.xpdr-val{{font-family:var(--font-hd);font-size:22px;font-weight:800;line-height:1;}}
-.xpdr-card.mode-s .xpdr-val{{color:var(--green);text-shadow:0 0 10px var(--green);}}
-.xpdr-card.mode-c .xpdr-val{{color:var(--blue);text-shadow:0 0 10px var(--blue);}}
-.xpdr-card.ads-b  .xpdr-val{{color:#00ffcc;text-shadow:0 0 10px #00ffcc;}}
-.xpdr-card.mode-a .xpdr-val{{color:var(--amber);text-shadow:0 0 10px var(--amber);}}
-.xpdr-sub{{font-size:7px;color:var(--muted);margin-top:2px;letter-spacing:1px;}}
-.mode-line{{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,255,80,0.04);font-size:8px;}}
-.mode-line:last-child{{border-bottom:none;}}
-.mode-name{{color:var(--muted);letter-spacing:1px;}}
-.mode-info{{color:var(--green2);}}
-
-/* CONFLICTS */
-.conflict-row{{display:grid;grid-template-columns:38px 70px 20px 70px 1fr;align-items:center;gap:5px;padding:5px 6px;margin-bottom:4px;background:rgba(255,32,32,0.05);border-radius:2px;font-size:10px;}}
-.cf-badge{{font-size:8px;font-weight:700;letter-spacing:1px;}}
-.cf-cs{{color:var(--white);font-size:10px;letter-spacing:1px;}}
-.cf-sep{{color:var(--muted);text-align:center;}}
-.cf-data{{font-size:9px;color:var(--amber);text-align:right;}}
-
-/* SOURCE */
+.xpdr-card.mode-s::before{{background:var(--cyan);}}.xpdr-card.mode-c::before{{background:var(--blue);}}
+.xpdr-card.ads-b::before{{background:#00ffcc;}}.xpdr-card.mode-a::before{{background:var(--gold);}}
+.xpdr-label{{font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;}}
+.xpdr-val{{font-family:var(--font-ui);font-size:24px;font-weight:900;line-height:1;}}
+.xpdr-card.mode-s .xpdr-val{{color:var(--cyan);}}.xpdr-card.mode-c .xpdr-val{{color:var(--blue);}}
+.xpdr-card.ads-b .xpdr-val{{color:#00ffcc;}}.xpdr-card.mode-a .xpdr-val{{color:var(--gold);}}
+.xpdr-sub{{font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-top:3px;letter-spacing:1px;}}
+.mode-line{{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border2);font-family:var(--font-mono);font-size:8px;}}
+.mode-line:last-child{{border-bottom:none;}}.mode-name{{color:var(--text-dim);letter-spacing:1px;}}.mode-info{{color:var(--text);}}
+.conflict-row{{display:grid;grid-template-columns:38px 70px 20px 70px 1fr;align-items:center;gap:5px;padding:5px 6px;margin-bottom:4px;background:rgba(255,75,120,0.05);border:1px solid rgba(255,75,120,0.1);border-radius:6px;font-family:var(--font-mono);font-size:10px;}}
+.cf-badge{{font-size:8px;font-weight:700;letter-spacing:1px;}}.cf-cs{{color:var(--text);font-size:10px;letter-spacing:1px;}}
+.cf-sep{{color:var(--text-dim);text-align:center;}}.cf-data{{font-size:9px;color:var(--gold);text-align:right;}}
 .source-wrap{{display:flex;align-items:center;gap:14px;}}
-.src-leg{{display:flex;align-items:center;gap:5px;margin-bottom:5px;font-size:9px;}}
-.src-dot{{width:7px;height:7px;border-radius:50%;flex-shrink:0;}}
-.src-lbl{{color:var(--muted);width:48px;letter-spacing:1px;}}
-.src-cnt{{font-size:9px;}}
-
-/* SQUAWK */
-.sq-special-row{{display:grid;grid-template-columns:50px 78px 76px 1fr;align-items:center;gap:5px;padding:5px 5px;margin-bottom:4px;background:rgba(255,32,32,0.06);border-radius:2px;font-size:10px;}}
-.sq-code{{font-family:var(--font-hd);font-size:15px;font-weight:700;letter-spacing:2px;}}
-.sq-meaning{{font-size:7px;letter-spacing:2px;}}
-.sq-cs{{color:var(--white);}}
-.sq-alt{{color:var(--muted);font-size:9px;text-align:right;}}
+.src-leg{{display:flex;align-items:center;gap:5px;margin-bottom:5px;font-family:var(--font-mono);font-size:9px;}}
+.src-dot{{width:7px;height:7px;border-radius:50%;flex-shrink:0;}}.src-lbl{{color:var(--text-dim);width:48px;letter-spacing:1px;}}.src-cnt{{font-size:9px;}}
+.sq-special-row{{display:grid;grid-template-columns:50px 78px 76px 1fr;align-items:center;gap:5px;padding:5px 5px;margin-bottom:4px;background:rgba(255,75,120,0.05);border:1px solid rgba(255,75,120,0.1);border-radius:6px;font-family:var(--font-mono);font-size:10px;}}
+.sq-code{{font-family:var(--font-ui);font-size:16px;font-weight:900;letter-spacing:2px;}}
+.sq-meaning{{font-size:7px;letter-spacing:2px;}}.sq-cs{{color:var(--text);}}.sq-alt{{color:var(--text-dim);font-size:9px;text-align:right;}}
 .sq-row{{display:grid;grid-template-columns:50px 1fr 26px;align-items:center;gap:5px;margin-bottom:4px;}}
-.sq-num{{color:var(--green2);font-size:10px;letter-spacing:2px;}}
-.sq-bar-wrap{{height:4px;background:rgba(0,255,80,0.06);border-radius:2px;}}
-.sq-bar{{height:100%;border-radius:2px;background:var(--green3);}}
-.sq-cnt{{color:var(--muted);font-size:9px;text-align:right;}}
-
-/* BARO/GEO */
-.disc-row{{display:grid;grid-template-columns:68px 50px 10px 50px 54px;align-items:center;gap:4px;padding:4px 0;border-bottom:1px solid var(--border2);font-size:9px;}}
-.disc-row:last-child{{border-bottom:none;}}
-.disc-cs{{color:var(--white);font-size:10px;}}
-.disc-baro{{color:var(--blue);text-align:right;}}
-.disc-geo{{color:var(--amber);}}
-.disc-sep{{color:var(--muted);text-align:center;}}
-.disc-diff{{font-size:10px;font-weight:700;text-align:right;}}
-
-/* SECTOR */
+.sq-num{{font-family:var(--font-mono);color:var(--cyan);font-size:10px;letter-spacing:2px;}}
+.sq-bar-wrap{{height:4px;background:rgba(255,255,255,0.05);border-radius:2px;}}.sq-bar{{height:100%;border-radius:2px;background:var(--cyan);opacity:0.4;}}
+.sq-cnt{{font-family:var(--font-mono);color:var(--text-dim);font-size:9px;text-align:right;}}
+.disc-row{{display:grid;grid-template-columns:68px 50px 10px 50px 54px;align-items:center;gap:4px;padding:4px 0;border-bottom:1px solid var(--border2);font-family:var(--font-mono);font-size:9px;}}
+.disc-row:last-child{{border-bottom:none;}}.disc-cs{{color:var(--text);font-size:10px;}}
+.disc-baro{{color:var(--blue);text-align:right;}}.disc-geo{{color:var(--gold);}}
+.disc-sep{{color:var(--text-dim);text-align:center;}}.disc-diff{{font-size:10px;font-weight:700;text-align:right;}}
 .sector-row{{display:grid;grid-template-columns:88px 1fr 26px;align-items:center;gap:6px;margin-bottom:6px;}}
-.sector-name{{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}}
-.sector-bar-wrap{{height:6px;background:rgba(0,255,80,0.05);border-radius:1px;overflow:hidden;}}
-.sector-bar{{height:100%;border-radius:1px;transition:width 0.6s ease;}}
-.sector-count{{font-family:var(--font-hd);font-size:11px;text-align:right;}}
-
-/* FL */
+.sector-name{{font-family:var(--font-mono);font-size:8px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;}}
+.sector-bar-wrap{{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}}
+.sector-bar{{height:100%;border-radius:3px;transition:width 0.6s ease;}}.sector-count{{font-family:var(--font-ui);font-size:11px;font-weight:700;text-align:right;}}
 .fl-row{{display:grid;grid-template-columns:50px 1fr 26px;align-items:center;gap:5px;margin-bottom:4px;}}
-.fl-label{{font-size:8px;color:var(--muted);letter-spacing:1px;}}
-.fl-bar-wrap{{height:5px;background:rgba(0,255,80,0.05);border-radius:1px;overflow:hidden;}}
-.fl-bar{{height:100%;border-radius:1px;}}
-.fl-cnt{{font-size:9px;color:var(--green2);text-align:right;}}
-
-/* ARRIVALS / DEP */
-.mov-row{{display:grid;grid-template-columns:30px 70px 38px 42px 56px 1fr;align-items:center;gap:4px;padding:4px 5px;margin-bottom:3px;font-size:9px;border-radius:2px;}}
-.mov-row.arr{{background:rgba(0,255,136,0.04);border-left:2px solid var(--green3);}}
-.mov-row.dep{{background:rgba(255,170,0,0.04);border-left:2px solid rgba(255,170,0,0.4);}}
-.arr-badge{{background:rgba(0,255,136,0.15);color:var(--green);font-size:7px;letter-spacing:1px;padding:1px 3px;border-radius:1px;text-align:center;}}
-.dep-badge{{background:rgba(255,170,0,0.15);color:var(--amber);font-size:7px;letter-spacing:1px;padding:1px 3px;border-radius:1px;text-align:center;}}
-.mov-cs{{color:var(--white);letter-spacing:1px;}}
-.mov-ap{{color:var(--blue);font-size:8px;}}
-.mov-dist{{color:var(--muted);}}
-.mov-alt{{color:var(--green2);}}
-.mov-eta{{font-size:9px;font-weight:700;}}
-
-/* STATS */
+.fl-label{{font-family:var(--font-mono);font-size:8px;color:var(--text-dim);letter-spacing:1px;}}
+.fl-bar-wrap{{height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}}.fl-bar{{height:100%;border-radius:3px;}}
+.fl-cnt{{font-family:var(--font-mono);font-size:9px;color:var(--cyan);text-align:right;}}
+.mov-row{{display:grid;grid-template-columns:30px 70px 38px 42px 56px 1fr;align-items:center;gap:4px;padding:4px 5px;margin-bottom:3px;font-family:var(--font-mono);font-size:9px;border-radius:6px;}}
+.mov-row.arr{{background:rgba(0,212,255,0.04);border-left:2px solid rgba(0,212,255,0.3);}}
+.mov-row.dep{{background:rgba(255,209,102,0.04);border-left:2px solid rgba(255,209,102,0.3);}}
+.arr-badge{{background:rgba(0,212,255,0.15);color:var(--cyan);font-size:7px;letter-spacing:1px;padding:1px 3px;border-radius:3px;text-align:center;}}
+.dep-badge{{background:rgba(255,209,102,0.15);color:var(--gold);font-size:7px;letter-spacing:1px;padding:1px 3px;border-radius:3px;text-align:center;}}
+.mov-cs{{color:var(--text);letter-spacing:1px;}}.mov-ap{{color:var(--blue);font-size:8px;}}.mov-dist{{color:var(--text-dim);}}.mov-alt{{color:var(--cyan);}}.mov-eta{{font-size:9px;font-weight:700;}}
 .stats-grid{{display:grid;grid-template-columns:1fr 1fr;gap:6px;}}
-.stat-item{{background:var(--bg2);border:1px solid var(--border2);padding:7px 8px;border-radius:2px;}}
-.stat-lbl{{font-size:7px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}}
-.stat-val{{font-family:var(--font-hd);font-size:16px;font-weight:700;color:var(--green);text-shadow:0 0 8px var(--green);}}
-.stat-sub{{font-size:8px;color:var(--muted);margin-top:1px;}}
-
-/* AIRPORTS */
+.stat-item{{background:var(--panel2);border:1px solid var(--border2);padding:7px 8px;border-radius:var(--radius);}}
+.stat-lbl{{font-family:var(--font-mono);font-size:7px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}}
+.stat-val{{font-family:var(--font-ui);font-size:18px;font-weight:900;color:var(--cyan);}}.stat-sub{{font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-top:1px;}}
 .ap-row{{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2);align-items:flex-start;}}
 .ap-row:last-child{{border-bottom:none;}}
-.ap-id{{font-family:var(--font-hd);font-size:11px;font-weight:700;color:var(--green);text-shadow:0 0 6px var(--green);min-width:38px;}}
-.ap-info{{flex:1;}}
-.ap-name{{font-size:9px;color:var(--white);letter-spacing:0.5px;}}
-.ap-detail{{font-size:8px;color:var(--muted);margin-top:1px;letter-spacing:0.5px;}}
-
-.no-alert{{font-size:9px;color:var(--green3);letter-spacing:2px;padding:8px 0;text-align:center;text-transform:uppercase;}}
+.ap-id{{font-family:var(--font-ui);font-size:14px;font-weight:900;color:var(--cyan);min-width:38px;}}
+.ap-info{{flex:1;}}.ap-name{{font-family:var(--font-mono);font-size:9px;color:var(--text);letter-spacing:0.5px;}}
+.ap-detail{{font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-top:1px;letter-spacing:0.5px;}}
+.no-alert{{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;padding:8px 0;text-align:center;text-transform:uppercase;}}
 @keyframes sweep{{from{{transform:rotate(0deg)}}to{{transform:rotate(360deg)}}}}
 .radar-sweep{{animation:sweep 4s linear infinite;transform-origin:center;}}
-
-.footer{{background:var(--bg2);border-top:1px solid var(--green3);padding:7px 20px;display:flex;justify-content:space-between;font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}}
+.footer{{background:var(--panel);border-top:1px solid var(--border2);padding:8px 22px;font-family:var(--font-mono);font-size:8px;color:var(--muted);letter-spacing:1px;display:flex;justify-content:space-between;}}
 </style>
 </head>
 <body>
@@ -1044,13 +996,13 @@ body::before{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background
         <div class="hdr-div"></div>
         <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--blue);">{mlat_count}</div><div class="hdr-stat-lbl">MLAT</div></div>
         <div class="hdr-div"></div>
-        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--amber);">{avg_alt:,}</div><div class="hdr-stat-lbl">AVG ALT FT</div></div>
+        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--gold);">{avg_alt:,}</div><div class="hdr-stat-lbl">AVG ALT FT</div></div>
         <div class="hdr-div"></div>
         <div class="hdr-stat"><div class="hdr-stat-val" style="color:{conflict_color};">{len(conflicts)}</div><div class="hdr-stat-lbl">CONFLICTS</div></div>
         <div class="hdr-div"></div>
-        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--green);">{len(list(arrival_list))}</div><div class="hdr-stat-lbl">ARRIVALS</div></div>
+        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--cyan);">{len(list(arrival_list))}</div><div class="hdr-stat-lbl">ARRIVALS</div></div>
         <div class="hdr-div"></div>
-        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--amber);">{len(list(departure_list))}</div><div class="hdr-stat-lbl">DEPARTURES</div></div>
+        <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--gold);">{len(list(departure_list))}</div><div class="hdr-stat-lbl">DEPARTURES</div></div>
     </div>
     <div class="hdr-right">
         <div class="hdr-time">{now_str}Z</div>
@@ -1089,7 +1041,7 @@ body::before{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background
             <div style="margin-top:9px;border-top:1px solid var(--border2);padding-top:7px;">
                 <div class="mode-line"><span class="mode-name">FREQ TX</span><span class="mode-info">1090 MHz ES / 978 UAT</span></div>
                 <div class="mode-line"><span class="mode-name">PROTOCOLO</span><span class="mode-info">DO-260B / RTCA SC-186</span></div>
-                <div class="mode-line"><span class="mode-name">SPI ACTIVE</span><span class="mode-info" style="color:{'var(--amber)' if spi_count else 'var(--green3)'};">{spi_count} ACFT IDENT</span></div>
+                <div class="mode-line"><span class="mode-name">SPI ACTIVE</span><span class="mode-info" style="color:{'var(--gold)' if spi_count else 'var(--text-dim)'};">{spi_count} ACFT IDENT</span></div>
                 <div class="mode-line"><span class="mode-name">ON GROUND</span><span class="mode-info">{total - airborne} / {total} ACFT</span></div>
             </div>
         </div>
@@ -1106,7 +1058,7 @@ body::before{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background
 
         <div class="panel">
             <div class="panel-hdr amber">ALTIMETRÍA BARO vs GEO — QNH DISCREPANCY CHECK</div>
-            <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--muted);margin-bottom:5px;letter-spacing:1px;">
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:7px;color:var(--text-dim);margin-bottom:5px;letter-spacing:1px;">
                 <span>CALLSIGN</span><span>BARO</span><span>/</span><span>GEO</span><span>Δ ERR</span>
             </div>
             {disc_html}
@@ -1118,27 +1070,27 @@ body::before{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background
 
         <div class="panel">
             <div class="panel-hdr red">CONFLICT ALERT — TCAS SEPARATION MONITOR</div>
-            <div style="font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;display:flex;gap:16px;">
+            <div style="font-family:var(--font-mono);font-size:8px;color:var(--text-dim);letter-spacing:1px;margin-bottom:6px;display:flex;gap:16px;">
                 <span>CRITICAL: &lt;3NM / &lt;500ft</span>
                 <span>WARNING: &lt;5NM / &lt;1000ft</span>
-                <span style="color:var(--green3);">ICAO DOC 4444 PANS-ATM</span>
+                <span style="color:var(--text-dim);">ICAO DOC 4444 PANS-ATM</span>
             </div>
             {conflicts_html}
         </div>
 
         <div class="panel">
             <div class="panel-hdr blue">ARRIVALS &amp; DEPARTURES — SAEZ · SABE TRAFFIC FEED</div>
-            <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--muted);letter-spacing:2px;margin-bottom:5px;text-transform:uppercase;border-bottom:1px solid var(--border2);padding-bottom:4px;">
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:7px;color:var(--text-dim);letter-spacing:2px;margin-bottom:5px;text-transform:uppercase;border-bottom:1px solid var(--border2);padding-bottom:4px;">
                 <span>TYPE</span><span>CALLSIGN</span><span>ARPT</span><span>DIST</span><span>ALT</span><span>ETA/CLB</span>
             </div>
             {arr_html}
-            <div style="height:5px;border-top:1px dashed rgba(0,255,80,0.08);margin:6px 0 6px;"></div>
+            <div style="height:5px;border-top:1px dashed rgba(255,255,255,0.06);margin:6px 0 6px;"></div>
             {dep_html}
         </div>
 
         <div class="panel">
             <div class="panel-hdr">FLIGHT LEVEL DISTRIBUTION — RVSM FL290–FL410</div>
-            <div style="font-size:7px;color:var(--muted);margin-bottom:6px;letter-spacing:1px;">ICAO ANNEX 2 · RVSM 1000ft VERTICAL SEP · STANDARD 2000ft BELOW FL290</div>
+            <div style="font-family:var(--font-mono);font-size:7px;color:var(--text-dim);margin-bottom:6px;letter-spacing:1px;">ICAO ANNEX 2 · RVSM 1000ft VERTICAL SEP · STANDARD 2000ft BELOW FL290</div>
             {fl_html if fl_html else '<div class="no-alert">NO ALTITUDE DATA</div>'}
         </div>
 
@@ -1146,15 +1098,15 @@ body::before{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background
             <div class="panel-hdr">SURVEILLANCE SOURCE MIX — DATALINK ANALYSIS</div>
             <div class="source-wrap">
                 <svg viewBox="0 0 120 120" width="110" height="110" style="flex-shrink:0;">
-                    <circle cx="60" cy="60" r="57" fill="none" stroke="rgba(0,255,80,0.06)" stroke-width="1"/>
-                    <circle cx="60" cy="60" r="40" fill="none" stroke="rgba(0,255,80,0.04)" stroke-width="1"/>
-                    <circle cx="60" cy="60" r="20" fill="none" stroke="rgba(0,255,80,0.04)" stroke-width="1"/>
-                    <g class="radar-sweep"><line x1="60" y1="60" x2="117" y2="60" stroke="rgba(0,255,80,0.15)" stroke-width="1.5"/></g>
+                    <circle cx="60" cy="60" r="57" fill="none" stroke="rgba(0,212,255,0.06)" stroke-width="1"/>
+                    <circle cx="60" cy="60" r="40" fill="none" stroke="rgba(0,212,255,0.04)" stroke-width="1"/>
+                    <circle cx="60" cy="60" r="20" fill="none" stroke="rgba(0,212,255,0.04)" stroke-width="1"/>
+                    <g class="radar-sweep"><line x1="60" y1="60" x2="117" y2="60" stroke="rgba(0,212,255,0.15)" stroke-width="1.5"/></g>
                     {src_arcs}
                 </svg>
                 <div style="flex:1;">{src_legend}</div>
             </div>
-            <div style="margin-top:8px;font-size:8px;color:var(--muted);letter-spacing:1px;border-top:1px solid var(--border2);padding-top:7px;line-height:1.9;">
+            <div style="margin-top:8px;font-family:var(--font-mono);font-size:8px;color:var(--text-dim);letter-spacing:1px;border-top:1px solid var(--border2);padding-top:7px;line-height:1.9;">
                 <div>ADS-B   · DO-260B · 1090MHz Extended Squitter · GPS position</div>
                 <div>MLAT    · TDOA multilateration · ≥4 ground receivers</div>
                 <div>ASTERIX · CAT048 radar plots · SSR Mode C/S returns</div>
@@ -1168,11 +1120,11 @@ body::before{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background
 
         <div class="panel">
             <div class="panel-hdr">FIR SECTOR LOAD — BUENOS AIRES ACC</div>
-            <div style="font-size:7px;color:var(--muted);margin-bottom:7px;letter-spacing:1px;">MAX CAPACITY: 25 ACFT/SECTOR · ICAO DOC 9426</div>
+            <div style="font-family:var(--font-mono);font-size:7px;color:var(--text-dim);margin-bottom:7px;letter-spacing:1px;">MAX CAPACITY: 25 ACFT/SECTOR · ICAO DOC 9426</div>
             {sector_html}
-            <div style="margin-top:7px;font-size:8px;color:var(--muted);display:flex;gap:10px;border-top:1px solid var(--border2);padding-top:6px;flex-wrap:wrap;">
-                <span style="color:var(--green);">■ NORMAL &lt;12</span>
-                <span style="color:var(--amber);">■ HIGH 12–20</span>
+            <div style="margin-top:7px;font-family:var(--font-mono);font-size:8px;color:var(--text-dim);display:flex;gap:10px;border-top:1px solid var(--border2);padding-top:6px;flex-wrap:wrap;">
+                <span style="color:var(--cyan);">■ NORMAL &lt;12</span>
+                <span style="color:var(--gold);">■ HIGH 12–20</span>
                 <span style="color:var(--red);">■ OVERLOAD &gt;20</span>
             </div>
         </div>
@@ -1197,18 +1149,18 @@ body::before{{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background
                 </div>
                 <div class="stat-item">
                     <div class="stat-lbl">AVG GS</div>
-                    <div class="stat-val" style="font-size:13px;color:var(--amber);">{avg_vel}</div>
+                    <div class="stat-val" style="font-size:13px;color:var(--gold);">{avg_vel}</div>
                     <div class="stat-sub">KM/H</div>
                 </div>
             </div>
-            <div style="margin-top:9px;font-size:8px;color:var(--muted);letter-spacing:1px;line-height:2;border-top:1px solid var(--border2);padding-top:7px;">
-                <div>KAFKA TOPIC  <span style="color:var(--green2);">opensky-argentina</span></div>
-                <div>POLL INT     <span style="color:var(--green2);">10s anónimo</span></div>
-                <div>REFRESH      <span style="color:var(--green2);">{REFRESH_INTERVAL}s meta</span></div>
-                <div>BARO DISC    <span style="color:{'var(--amber)' if discrepancies else 'var(--green2)'};">{len(discrepancies)} alertas QNH</span></div>
-                <div>SPI IDENT    <span style="color:{'var(--amber)' if spi_count else 'var(--green2)'};">{spi_count} activos</span></div>
-                <div>ARRIVALS     <span style="color:var(--green2);">{len(list(arrival_list))} en approach</span></div>
-                <div>DEPARTURES   <span style="color:var(--green2);">{len(list(departure_list))} en climb</span></div>
+            <div style="margin-top:9px;font-family:var(--font-mono);font-size:8px;color:var(--text-dim);letter-spacing:1px;line-height:2;border-top:1px solid var(--border2);padding-top:7px;">
+                <div>KAFKA TOPIC  <span style="color:var(--cyan);">opensky-argentina</span></div>
+                <div>POLL INT     <span style="color:var(--text);">10s anónimo</span></div>
+                <div>REFRESH      <span style="color:var(--text);">{REFRESH_INTERVAL}s meta</span></div>
+                <div>BARO DISC    <span style="color:{'var(--gold)' if discrepancies else 'var(--green)'};">{len(discrepancies)} alertas QNH</span></div>
+                <div>SPI IDENT    <span style="color:{'var(--gold)' if spi_count else 'var(--green)'};">{spi_count} activos</span></div>
+                <div>ARRIVALS     <span style="color:var(--cyan);">{len(list(arrival_list))} en approach</span></div>
+                <div>DEPARTURES   <span style="color:var(--gold);">{len(list(departure_list))} en climb</span></div>
             </div>
         </div>
 
@@ -1258,7 +1210,9 @@ while True:
 
         for tp, records in messages.items():
             for record in records:
+                
                 data = record.value
+                print(data.get("icao24"))
                 icao = data.get("icao24")
                 if not icao:
                     continue
@@ -1295,24 +1249,24 @@ while True:
                         squawk_log.appendleft(entry)
                         alert_log.appendleft(entry)
 
-        # Limpiar viejos
-        cutoff = time.time() - 300
-        stale = [icao for icao, a in aircraft_state.items()
-                 if a.get("server_time", 0) < cutoff]
-        for icao in stale:
-            del aircraft_state[icao]
-            aircraft_trails.pop(icao, None)
+        # # Limpiar viejos
+        # cutoff = time.time() - 300
+        # stale = [icao for icao, a in aircraft_state.items()
+        #          if a.get("server_time", 0) < cutoff]
+        # for icao in stale:
+        #     del aircraft_state[icao]
+        #     aircraft_trails.pop(icao, None)
 
-        # Limpiar arrivals aterrizados
-        fresh_arr = deque(
-            [f for f in arrival_list if f.get("alt_ft", 9999) > 500],
-            maxlen=12
-        )
-        arrival_list.clear()
-        arrival_list.extend(fresh_arr)
+        # # Limpiar arrivals aterrizados
+        # fresh_arr = deque(
+        #     [f for f in arrival_list if f.get("alt_ft", 9999) > 500],
+        #     maxlen=12
+        # )
+        # arrival_list.clear()
+        # arrival_list.extend(fresh_arr)
 
         # Generar dashboard
-        html = generate_atc_dashboard()
+        html = generate_atc_dashboard(aircraft_state)
         with open(DASHBOARD_FILE, "w", encoding="utf-8") as f:
             f.write(html)
 

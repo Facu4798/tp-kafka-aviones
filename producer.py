@@ -20,7 +20,7 @@ def kafka_produce(producer):
         # response = requests.get(OPENSKY_URL, timeout=15)
         # print("RESPONSE_STATUS: ",response.status_code)
         # raw = response.json()
-        raw = json.loads(open("sample_message_world.json").read())
+        raw = json.loads(open("sample_message.json").read())
         
         
         states       = raw.get("states") or [] # empty message type check
