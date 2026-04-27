@@ -324,6 +324,8 @@ def feb(df,batch_id):
     import datetime
     from datetime import datetime, timezone
     import json
+    import smtplib
+    from email.message import EmailMessage
     
     # ── Agregaciones Spark (se hacen en el DataFrame antes de collectear) ──
     # Conteo por tipo
@@ -347,6 +349,7 @@ def feb(df,batch_id):
     anomaly_rows = df.filter(
         sf.col("anomaly").isNotNull() & (sf.col("anomaly") != "")
     ).select("callsign","anomaly","altitude_ft","velocity_kmh").limit(10).collect()
+    batch_alerts = []
 
     # Collect de todos los registros para el mapa
     all_rows = df.collect()
@@ -398,6 +401,7 @@ def feb(df,batch_id):
             vel = int(ar["velocity_kmh"]) if ar["velocity_kmh"] else "?"
             ts  = now.strftime("%H:%M:%S")
             msg = f"{ts} | {cs} | {an} | {alt}ft | {vel}km/h"
+            batch_alerts.append(msg)
             if not any(cs in a for a in shared_state["alert_log"]):
                 shared_state["alert_log"].appendleft(msg)
 
@@ -425,6 +429,27 @@ def feb(df,batch_id):
 
     import requests
     requests.post("http://localhost:5000/post_message", json=snapshot)
+
+    if batch_alerts:
+        gmail_user = "facumazzola@gmail.com"
+        gmail_app_password = "PON_AQUI_TU_APP_PASSWORD"
+
+        email_message = EmailMessage()
+        email_message["Subject"] = f"Alertas de aeronaves - batch {batch_id}"
+        email_message["From"] = gmail_user
+        email_message["To"] = gmail_user
+        email_message.set_content(
+            "Se detectaron alertas en el procesamiento actual.\n\n"
+            + "\n".join(f"- {alert}" for alert in batch_alerts)
+        )
+
+        try:
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+                smtp.login(gmail_user, gmail_app_password)
+                smtp.send_message(email_message)
+            print(f"[{datetime.now()}] 📧 Mail de alertas enviado ({len(batch_alerts)} alertas)")
+        except Exception as exc:
+            print(f"[{datetime.now()}] ⚠️ No se pudo enviar el mail de alertas: {exc}")
 
     print(f"[{datetime.now()}] ✅ Batch {batch_id} - Actualización completada")
 
